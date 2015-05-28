@@ -2,6 +2,8 @@ package scmspain.karyon.restrouter;
 
 
 import com.google.common.base.Predicates;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.netflix.config.ConfigurationManager;
 import io.netty.buffer.ByteBuf;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
@@ -22,11 +24,13 @@ import java.util.Set;
 public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
 
     public static final String BASE_PACKAGE_PROPERTY        =   "com.scmspain.karyon.rest.property.packages";
-
+    private final Injector injector;
     private final SimpleUriRouter<ByteBuf, ByteBuf> delegate = new SimpleUriRouter<ByteBuf, ByteBuf>();
 
-    public RestBasedRouter(){
+    @Inject
+    public RestBasedRouter(Injector inject){
 
+        this.injector = inject;
         String basePackage = ConfigurationManager.getConfigInstance().getString(BASE_PACKAGE_PROPERTY);
 
         Reflections reflections = new Reflections(basePackage);
@@ -43,9 +47,10 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
             for(Method method:endpointMethods){
                 Path path = method.getAnnotation(Path.class);
                 String uri = path.value();
+
                 delegate.addUri(uri, (request, response) -> {
                     try {
-                        return (Observable) method.invoke(endpoint.newInstance(), request, response);
+                        return (Observable) method.invoke(injector.getInstance(endpoint.newInstance().getClass()), request, response);
                     } catch (InvocationTargetException e) {
                         throw new RuntimeException("Exception invoking method " + method.toString(), e);
                     } catch (InstantiationException e) {
