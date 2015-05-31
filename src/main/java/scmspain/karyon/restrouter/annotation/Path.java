@@ -1,6 +1,7 @@
 package scmspain.karyon.restrouter.annotation;
 
 
+import io.netty.handler.codec.http.HttpMethod;
 import scmspain.karyon.restrouter.auth.AuthenticationService;
 import scmspain.karyon.restrouter.auth.NoAuthenticationServiceImpl;
 
@@ -17,6 +18,8 @@ import java.lang.annotation.Target;
 public @interface Path {
 
     String value();
+
+    String method();
 
     Class<? extends AuthenticationService> authentication() default NoAuthenticationServiceImpl.class;
 
