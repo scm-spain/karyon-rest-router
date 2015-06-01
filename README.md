@@ -11,7 +11,8 @@ com.scmspain.karyon.rest.property.packages = com.example.forlayos.minglanillas
 
 Example of endpoint and path annotations
 
-```
+```java
+package com.example.forlayos.minglanillas;
 
 @Singleton
 @Endpoint
