@@ -5,7 +5,6 @@ import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import io.reactivex.netty.protocol.http.server.RequestHandler;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
-import netflix.karyon.transport.interceptor.InterceptorKey;
 import rx.Observable;
 
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,7 +25,7 @@ public class RestUriRouter<I, O> implements RequestHandler<I, O> {
     public Observable<Void> handle(HttpServerRequest<I> request, HttpServerResponse<O> response) {
         HttpKeyEvaluationContext context = new HttpKeyEvaluationContext(response.getChannel());
         for (Route route : routes) {
-            if (route.key.apply(request, context)) {
+            if (route.getKey().apply(request, context)) {
                 return route.getHandler().handle(request, response);
             }
         }
@@ -48,23 +47,4 @@ public class RestUriRouter<I, O> implements RequestHandler<I, O> {
         return this;
     }
 
-    private class Route {
-
-        private final InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key;
-        private final RequestHandler<I, O> handler;
-
-        public Route(InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key,
-                     RequestHandler<I, O> handler) {
-            this.key = key;
-            this.handler = handler;
-        }
-
-        public InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> getKey() {
-            return key;
-        }
-
-        public RequestHandler<I, O> getHandler() {
-            return handler;
-        }
-    }
 }

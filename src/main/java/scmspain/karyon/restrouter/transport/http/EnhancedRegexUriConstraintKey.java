@@ -4,9 +4,6 @@ import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
 import netflix.karyon.transport.http.RegexUriConstraintKey;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * Created by victor.caldentey on 31/5/15.
  */
