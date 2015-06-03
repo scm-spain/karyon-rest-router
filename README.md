@@ -1,7 +1,101 @@
 # karyon-rest-router
 Module for manage endpoint REST in Karyon framework
 
-## Setting package name to find endpoints REST
+## Using the module in your server
+
+### 1- Include the module
+
+```java
+@Modules(include = {
+    ShutdownModule.class,
+    KaryonWebAdminModule.class,
+    KaryonEurekaModule.class,
+    AppServer.KaryonRestRouterModuleImpl.class,
+    //KaryonServoModule.class
+})
+```
+
+### 2- Extends KaryonRestRouterModule and override configureServer and configure to put your configurations.
+
+```java
+public interface AppServer {
+    class KaryonRestRouterModuleImpl extends KaryonRestRouterModule{
+```
+
+```java
+        @Override
+        protected void configureServer() {
+            //Configure your server!
+            bind(AuthenticationManagerInterface.class).to(AuthenticationManager.class);
+            interceptorSupport().forUri("/*").intercept(LoggingInterceptor.class);
+            //interceptorSupport().forUri("/*").interceptIn(AuthenticationInterceptor.class);
+
+            int port = properties.getIntProperty("server.port", 8080).get();
+            int threads = properties.getIntProperty("server.threads",50).get();
+            server().port(port).threadPoolSize(threads);
+
+        }
+        @Override
+        public void configure()
+        {
+            //Configure your lifecycle of your objects!
+            bind(CampaignRepositoryInterface.class).to(DynamoDBCampaignRepository.class);
+            bind(CampaignController.class).asEagerSingleton();
+            bind(DynamoDBConfig.class).asEagerSingleton();
+            bind(DynamoDBConnector.class).asEagerSingleton();
+            bind(GsonService.class).asEagerSingleton();
+
+            super.configure();
+        }
+```
+
+Finally, you will have something like this:
+
+```java
+@ArchaiusBootstrap()
+@KaryonBootstrap(name = "AppServer", healthcheck = HealthCheck.class)
+@Singleton
+@Modules(include = {
+    ShutdownModule.class,
+    KaryonWebAdminModule.class,
+    KaryonEurekaModule.class,
+    AppServer.KaryonRestRouterModuleImpl.class,
+    //KaryonServoModule.class
+})
+public interface AppServer {
+    class KaryonRestRouterModuleImpl extends KaryonRestRouterModule{
+
+        private DynamicPropertyFactory properties = DynamicPropertyFactory.getInstance();
+
+        @Override
+        protected void configureServer() {
+            //Configure your server!
+            bind(AuthenticationManagerInterface.class).to(AuthenticationManager.class);
+            interceptorSupport().forUri("/*").intercept(LoggingInterceptor.class);
+            //interceptorSupport().forUri("/*").interceptIn(AuthenticationInterceptor.class);
+
+            int port = properties.getIntProperty("server.port", 8080).get();
+            int threads = properties.getIntProperty("server.threads",50).get();
+            server().port(port).threadPoolSize(threads);
+
+        }
+        @Override
+        public void configure()
+        {
+            //Configure your lifecycle of your objects!
+            bind(CampaignRepositoryInterface.class).to(DynamoDBCampaignRepository.class);
+            bind(CampaignController.class).asEagerSingleton();
+            bind(DynamoDBConfig.class).asEagerSingleton();
+            bind(DynamoDBConnector.class).asEagerSingleton();
+            bind(GsonService.class).asEagerSingleton();
+
+            super.configure();
+        }
+    }
+}
+```
+
+### 3- Setting package name to find endpoints REST
 
 Set this property in your .properties files
 
