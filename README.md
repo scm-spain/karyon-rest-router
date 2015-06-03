@@ -1,6 +1,18 @@
 # karyon-rest-router
 Module for manage endpoint REST in Karyon framework
 
+## Getting Binaries
+
+Binaries and dependency information for Maven, Ivy, Gradle and others can be found at http://search.maven.org.
+
+Example of Gradle:
+
+```groovy
+dependencies {
+       compile 'com.scmspain.karyon:karyon-rest-router:1.0'   
+}
+```
+
 ## Using the module in your server
 
 ### 1- Include the module
