@@ -1,7 +1,11 @@
-group 'com.scmspain.karyon'
-version '1.0-SNAPSHOT'
-
 apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+group = 'com.scmspain.karyon'
+archivesBaseName = 'karyon-rest-router'
+version = '1.0'
+
 
 sourceCompatibility = 1.8
 
@@ -18,4 +22,69 @@ dependencies {
     compile 'com.netflix.karyon:karyon2-core:2.5.1'
     compile 'com.netflix.karyon:karyon2-governator:2.5.1'
     compile 'org.reflections:reflections:0.9.9'
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'com.scmspain.karyon:karyon-rest-router'
+                packaging 'jar'
+                // optionally artifactId can be defined here
+                description 'Module for manage endpoints REST in Karyon framework'
+                url 'https://github.com/scm-spain/karyon-rest-router'
+
+                scm {
+                    connection 'scm:git@github.com:scm-spain/karyon-rest-router.git'
+                    developerConnection 'scm:git@github.com:scm-spain/karyon-rest-router.git'
+                    url 'https://github.com/scm-spain/karyon-rest-router'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'victuxbb'
+                        name 'Victor Caldentey'
+                        email 'victor.caldentey@scmspain.com'
+                        organization 'SCM Spain'
+                        organizationUrl 'http://www.scmspain.com/'
+                    }
+                }
+            }
+        }
+    }
 }
