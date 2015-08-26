@@ -7,5 +7,5 @@ import rx.Observable;
 
 public interface AuthenticationService {
 
-    Observable<Boolean> authenticate(HttpServerRequest<ByteBuf> request);
+  Observable<Boolean> authenticate(HttpServerRequest<ByteBuf> request);
 }

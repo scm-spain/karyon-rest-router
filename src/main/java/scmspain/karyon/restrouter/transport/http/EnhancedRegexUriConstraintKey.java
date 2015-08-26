@@ -8,25 +8,26 @@ import netflix.karyon.transport.http.RegexUriConstraintKey;
  * Created by victor.caldentey on 31/5/15.
  */
 public class EnhancedRegexUriConstraintKey<I> extends RegexUriConstraintKey<I> {
-    private String verb;
-    public EnhancedRegexUriConstraintKey(String constraint, String verb) {
-        super(constraint);
-        if (null == verb) {
-            throw new NullPointerException("Verb can not be null.");
-        }
-        this.verb = verb;
-    }
+  private String verb;
 
-    @Override
-    public String toString() {
-        return "EnhancedRegexUriConstraintKey{verb=" + verb + '}' ;
+  public EnhancedRegexUriConstraintKey(String constraint, String verb) {
+    super(constraint);
+    if (null == verb) {
+      throw new NullPointerException("Verb can not be null.");
     }
+    this.verb = verb;
+  }
 
-    @Override
-    public boolean apply(HttpServerRequest<I> request, HttpKeyEvaluationContext context) {
-        if( super.apply(request, context) ){
-            return request.getHttpMethod().name().equals(this.verb);
-        }
-        return false;
+  @Override
+  public String toString() {
+    return "EnhancedRegexUriConstraintKey{verb=" + verb + '}';
+  }
+
+  @Override
+  public boolean apply(HttpServerRequest<I> request, HttpKeyEvaluationContext context) {
+    if (super.apply(request, context)) {
+      return request.getHttpMethod().name().equals(this.verb);
     }
+    return false;
+  }
 }

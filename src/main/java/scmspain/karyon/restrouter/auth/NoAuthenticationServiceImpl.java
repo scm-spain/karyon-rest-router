@@ -9,8 +9,8 @@ import rx.Observable;
  */
 public class NoAuthenticationServiceImpl implements AuthenticationService {
 
-    @Override
-    public Observable<Boolean> authenticate(HttpServerRequest<ByteBuf> request) {
-        return Observable.just(Boolean.TRUE);
-    }
+  @Override
+  public Observable<Boolean> authenticate(HttpServerRequest<ByteBuf> request) {
+    return Observable.just(Boolean.TRUE);
+  }
 }
