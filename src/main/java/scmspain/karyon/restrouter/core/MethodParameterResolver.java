@@ -1,5 +1,6 @@
 package scmspain.karyon.restrouter.core;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
@@ -13,6 +14,13 @@ import scmspain.karyon.restrouter.exception.ParamAnnotationException;
 
 @Singleton
 public class MethodParameterResolver {
+
+  private ParamTypeResolver paramTypeResolver;
+
+  @Inject
+  public MethodParameterResolver(ParamTypeResolver paramTypeResolver){
+    this.paramTypeResolver = paramTypeResolver;
+  }
 
   public Object[] resolveParameters(Method method, HttpServerRequest request, HttpServerResponse response, Map<String, String> pathParams, Map<String, List<String>> queryParams) throws ParamAnnotationException {
 
@@ -29,16 +37,7 @@ public class MethodParameterResolver {
         parameters[i] = response;
       } else {
         String value = injectParameterValueAnnotation(request, pathParams, queryParams, parametersAnnotations[i]);
-
-        if (param.isAssignableFrom(String.class)) {
-          parameters[i] = value;
-        } else if (param.isAssignableFrom(int.class) || param.isAssignableFrom(Integer.class)) {
-          parameters[i] = Integer.valueOf(value);
-        } else if (param.isAssignableFrom(double.class) || param.isAssignableFrom(Double.class)) {
-          parameters[i] = Double.valueOf(value);
-        } else if (param.isAssignableFrom(boolean.class) || param.isAssignableFrom(Boolean.class)) {
-          parameters[i] = Boolean.valueOf(value);
-        }
+        parameters[i] = paramTypeResolver.resolveValueType(param,value);
       }
     }
 

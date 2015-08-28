@@ -5,9 +5,6 @@ import io.reactivex.netty.protocol.http.server.RequestHandler;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
 import netflix.karyon.transport.interceptor.InterceptorKey;
 
-/**
- * Created by victor.caldentey on 1/6/15.
- */
 public class Route<I, O> {
 
   private final InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key;

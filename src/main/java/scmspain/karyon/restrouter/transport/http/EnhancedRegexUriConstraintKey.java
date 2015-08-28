@@ -4,9 +4,6 @@ import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
 import netflix.karyon.transport.http.RegexUriConstraintKey;
 
-/**
- * Created by victor.caldentey on 31/5/15.
- */
 public class EnhancedRegexUriConstraintKey<I> extends RegexUriConstraintKey<I> {
   private String verb;
 

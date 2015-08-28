@@ -1,4 +1,4 @@
-package scmspain.karyon.restrouter;
+package scmspain.karyon.restrouter.core;
 
 
 import com.google.inject.Singleton;
@@ -11,12 +11,13 @@ import java.util.regex.Pattern;
 public class URIParameterParser {
 
   private final String regexPattern = "(\\{.*?\\})";
-  private final String regexAllthethings = "([^\\/]+)";
+  private final String regexAllthethings = "([^\\?\\/]+)";
   private final String regexEnd = "\\/?$";
 
 
   public Map<String, String> getParams(String pathUri, String requestUri) {
 
+    requestUri = requestUri.split("\\?")[0]; //REMOVE FROM THE URI ALL QUERY PARAMS
     String requestUriPattern = this.getUriRegex(pathUri);
     Map<String, String> allMatches = new HashMap<String, String>();
 
@@ -37,7 +38,7 @@ public class URIParameterParser {
 
   public String getUriRegex(String pathUri) {
 
-    return pathUri.replaceAll(regexPattern, regexAllthethings) + this.regexEnd;
+    return pathUri.replaceAll(regexPattern, regexAllthethings)+regexEnd;
   }
 
 }

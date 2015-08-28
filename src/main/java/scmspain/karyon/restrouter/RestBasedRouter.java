@@ -6,6 +6,8 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.netflix.config.ConfigurationManager;
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import io.reactivex.netty.protocol.http.server.RequestHandler;
@@ -21,8 +23,8 @@ import scmspain.karyon.restrouter.annotation.Endpoint;
 import scmspain.karyon.restrouter.annotation.Path;
 import scmspain.karyon.restrouter.core.MethodParameterResolver;
 import scmspain.karyon.restrouter.core.ResourceLoader;
-import scmspain.karyon.restrouter.exception.PathParamNotFoundException;
-import scmspain.karyon.restrouter.exception.QueryParamRequiredNotFoundException;
+import scmspain.karyon.restrouter.core.URIParameterParser;
+import scmspain.karyon.restrouter.exception.ParamAnnotationException;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 
 public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
@@ -64,13 +66,16 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
             Map<String, List<String>> queryParams = request.getQueryParameters();
             Object[] invokeParams = rmParameterInjector.resolveParameters(method, request, response, params, queryParams);
             return (Observable) method.invoke(injector.getInstance(endpoint), invokeParams);
-          } catch (InvocationTargetException e) {
-            throw new RuntimeException("Exception invoking method " + method.toString(), e);
           } catch (IllegalAccessException e) {
             //Should never get here
+            response.setStatus(HttpResponseStatus.FORBIDDEN);
             throw new RuntimeException("Exception invoking method: " + method.toString());
-          } catch (PathParamNotFoundException | QueryParamRequiredNotFoundException e) {
-            throw new RuntimeException(e.getMessage());
+          } catch (ParamAnnotationException e) {
+            response.setStatus(HttpResponseStatus.BAD_REQUEST);
+            return Observable.empty();
+          } catch (InvocationTargetException e) {
+            response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+            throw new RuntimeException("Exception invoking method " + method.toString(), e);
           }
         });
       }

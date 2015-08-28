@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import junit.framework.TestCase;
 import org.junit.Before;
+import scmspain.karyon.restrouter.core.URIParameterParser;
 
 
 public class URIParameterParserTest extends TestCase {
@@ -71,8 +72,15 @@ public class URIParameterParserTest extends TestCase {
     assertEquals(0, paramsExpected.size());
   }
 
+  public void testURIWithOneParamAndOneQueryParam() throws Exception {
 
-  public void testGetUriRegex() throws Exception {
+    String pathUri = "/example/{id}";
+    String requestUri = "/example/99?id=5";
+
+    Map<String, String> paramsExpected = this.parameterParser.getParams(pathUri, requestUri);
+
+    assertEquals(1, paramsExpected.size());
+    assertEquals("99", paramsExpected.get("id"));
 
   }
 }

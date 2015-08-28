@@ -8,9 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
 import rx.Observable;
 
-/**
- * Created by victor.caldentey on 31/5/15.
- */
+
 public class RestUriRouter<I, O> implements RequestHandler<I, O> {
 
 
