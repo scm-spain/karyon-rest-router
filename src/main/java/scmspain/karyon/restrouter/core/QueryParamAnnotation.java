@@ -24,7 +24,6 @@ public class QueryParamAnnotation implements ParamAnnotation {
     if (values != null && !values.isEmpty()) {
       queryParamValue = values.get(0);
     }
-    //TODO ADD ALL EXCEPTIONS FOR CONVERSIONS
     if (queryParamValue == null) {
       if (!QueryParam.DEFAULT_VALUE.equals(queryParam.defaultValue())) {
         queryParamValue = queryParam.defaultValue();

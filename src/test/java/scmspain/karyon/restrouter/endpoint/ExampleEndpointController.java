@@ -2,6 +2,7 @@ package scmspain.karyon.restrouter.endpoint;
 
 import com.google.inject.Singleton;
 import io.netty.buffer.ByteBuf;
+import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import javax.ws.rs.HttpMethod;
 import rx.Observable;
@@ -24,8 +25,7 @@ public class ExampleEndpointController {
 
     //Example to get parameters from @Path
 
-    return response.writeStringAndFlush("Example endpoint controller with GET!")
-        .concatWith(response.close());
+    return response.writeStringAndFlush("Example endpoint controller with GET!");
 
   }
 
@@ -62,6 +62,27 @@ public class ExampleEndpointController {
     response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
     String jsonResponse = String.format("{\"id\":\"%s\",\"filter\":\"%s\"}",id,filter);
     return response.writeStringAndFlush(jsonResponse);
+
+  }
+
+  @Path(value = "/example_with_post_method", method = HttpMethod.POST)
+  public Observable<Void> postEndpoint(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
+
+    return response.writeStringAndFlush("Example endpoint controller with POST!");
+
+  }
+
+  @Path(value = "/example_with_put_method", method = HttpMethod.PUT)
+  public Observable<Void> putEndpoint(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
+
+    return response.writeStringAndFlush("Example endpoint controller with PUT!");
+
+  }
+
+  @Path(value = "/example_with_delete_method", method = HttpMethod.DELETE)
+  public Observable<Void> deleteEndpoint(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
+
+    return response.writeStringAndFlush("Example endpoint controller with DELETE!");
 
   }
 

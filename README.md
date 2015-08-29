@@ -1,67 +1,10 @@
 # karyon-rest-router
-Module for manage endpoint REST in Karyon framework
 
-## Setting package name to find endpoints REST
+Karyon-rest-router is a module for the netflix framework [Karyon](https://github.com/Netflix/karyon) to handle the routing system.
+It's based in the idea of [JAX-RS](https://jax-rs-spec.java.net/) but currently is not implementing it strictly, in a near future it will do it.
 
-Set this property in your .properties files
+## Documentation
 
-```
-com.scmspain.karyon.rest.property.packages = com.example.forlayos.minglanillas
-```
-
-Example of endpoint and path annotations
-
-```java
-package com.example.forlayos.minglanillas;
-
-@Singleton
-@Endpoint
-public class CampaignController {
-
-    private CampaignRepositoryInterface repository;
-    private GsonService gsonService;
-
-    public CampaignController(){
-
-    }
-
-    @Inject
-    public CampaignController(CampaignRepositoryInterface repository, GsonService gson)
-    {
-        this.repository = repository;
-        this.gsonService = gson;
-
-    }
-
-    @Path(value = "/campaigns/{id}", method = HttpMethod.GET)
-    public Observable<Void> getCampaignsResource(HttpServerResponse<ByteBuf> response, Map<String,String> pathParams) {
-        String id = pathParams.get("id");
-       //Code...
-       
-    }
-    @Path(value = "/campaigns", method = HttpMethod.POST )
-    public Observable<Void> postCampaignsResource(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
-        
-       //Code...
-    }
-    @Path(value = "/campaigns/{id}", method = HttpMethod.PUT)
-    public Observable<Void> putCampaignsResource(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response, Map<String,String> pathParams) {
-        String id = pathParams.get("id");
-       //Code...
-       
-
-    }
-    @Path(value = "/campaigns/{id}", method = HttpMethod.DELETE)
-    public Observable<Void> deleteCampaignsResource(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response, Map<String,String> pathParams) {
-
-        String id = pathParams.get("id");
-       //Code...
-
-    }
+Please see [wiki] (https://github.com/scm-spain/karyon-rest-router/wiki/Index) for detailed documentation.
 
 
-
-
-}
-
-```

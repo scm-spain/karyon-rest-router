@@ -7,7 +7,6 @@ import io.netty.buffer.EmptyByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.RxNetty;
 import io.reactivex.netty.protocol.http.client.HttpClientRequest;
-import io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import java.nio.charset.Charset;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -67,6 +66,7 @@ public class KaryonRestRouterTest {
 
 
   }
+
   @Test
   public void testEndpointGETWithQueryParamFilterAndDefaultValue() throws Exception {
     final CountDownLatch finishLatch = new CountDownLatch(1);
@@ -138,20 +138,51 @@ public class KaryonRestRouterTest {
   }
 
 
-//    @Test
-//    public void testEndpointPOST() throws Exception {
-//        final CountDownLatch finishLatch = new CountDownLatch(1);
-//        String body =
-//                RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
-//                        .submit(HttpClientRequest.createPost("/post_example"))
-//                        .flatMap(response -> {
-//                            Assert.assertEquals(200, response.getStatus().code());
-//                            return response.getContent().<String>map(content -> content.toString(Charset.defaultCharset()));
-//                        })
-//                        .finallyDo(() -> finishLatch.countDown())
-//                        .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
-//        Assert.assertEquals("Example endpoint controller with POST!", body);
-//
-//
-//    }
+  @Test
+  public void testEndpointPOST() throws Exception {
+    final CountDownLatch finishLatch = new CountDownLatch(1);
+    String body =
+        RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
+            .submit(HttpClientRequest.createPost("/example_with_post_method"))
+            .flatMap(response -> {
+              Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
+              return response.getContent().<String>map(content -> content.toString(Charset.defaultCharset()));
+            })
+            .finallyDo(() -> finishLatch.countDown())
+            .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
+    Assert.assertEquals("Example endpoint controller with POST!", body);
+
+  }
+
+  @Test
+  public void testEndpointPUT() throws Exception {
+    final CountDownLatch finishLatch = new CountDownLatch(1);
+    String body =
+        RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
+            .submit(HttpClientRequest.createPut("/example_with_put_method"))
+            .flatMap(response -> {
+              Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
+              return response.getContent().<String>map(content -> content.toString(Charset.defaultCharset()));
+            })
+            .finallyDo(() -> finishLatch.countDown())
+            .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
+    Assert.assertEquals("Example endpoint controller with PUT!", body);
+
+  }
+
+  @Test
+  public void testEndpointDELETE() throws Exception {
+    final CountDownLatch finishLatch = new CountDownLatch(1);
+    String body =
+        RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
+            .submit(HttpClientRequest.createDelete("/example_with_delete_method"))
+            .flatMap(response -> {
+              Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
+              return response.getContent().<String>map(content -> content.toString(Charset.defaultCharset()));
+            })
+            .finallyDo(() -> finishLatch.countDown())
+            .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
+    Assert.assertEquals("Example endpoint controller with DELETE!", body);
+
+  }
 }
