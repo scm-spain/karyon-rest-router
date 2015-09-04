@@ -86,6 +86,16 @@ public class ExampleEndpointController {
 
   }
 
+  //Test path precedence
+  @Path(value = "/example_path/hardcoded_param", method = HttpMethod.GET)
+  public Observable<Void> hardcodedPathEndpoint(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
+    return response.writeStringAndFlush("I'm the hardcoded one");
+  }
+
+  @Path(value = "/example_path/{parameterized_param}", method = HttpMethod.GET)
+  public Observable<Void> parameterizedPathEndpoint(HttpServerRequest<ByteBuf> request, @PathParam("parameterized_param") String p, HttpServerResponse<ByteBuf> response) {
+    return response.writeStringAndFlush("I'm the parameterized one");
+  }
 
 }
 
