@@ -16,7 +16,6 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import rx.Observable;
 import scmspain.karyon.restrouter.annotation.Endpoint;

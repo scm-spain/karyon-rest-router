@@ -197,4 +197,14 @@ public class KaryonRestRouterTest {
                       .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
       Assert.assertEquals("I'm the hardcoded one", body);
   }
+
+  @Test
+  public void testPathNotFound() throws Exception {
+    HttpResponseStatus status =
+        RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
+            .submit(HttpClientRequest.createGet("/unexistant_path"))
+            .map(response -> response.getStatus())
+            .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND, status);
+  }
 }
