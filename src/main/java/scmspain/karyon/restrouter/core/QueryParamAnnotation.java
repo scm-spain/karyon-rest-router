@@ -1,7 +1,10 @@
 package scmspain.karyon.restrouter.core;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
 import scmspain.karyon.restrouter.annotation.QueryParam;
 import scmspain.karyon.restrouter.exception.ParamAnnotationException;
 import scmspain.karyon.restrouter.exception.QueryParamRequiredNotFoundException;
@@ -18,20 +21,16 @@ public class QueryParamAnnotation implements ParamAnnotation {
 
   @Override
   public String getParameterValue() throws ParamAnnotationException {
-    List<String> values = queryParams.get(queryParam.value());
+    Optional<List<String>> values = Optional.ofNullable(queryParams.get(queryParam.value()));
 
-    String queryParamValue = null;
-    if (values != null && !values.isEmpty()) {
-      queryParamValue = values.get(0);
-    }
-    if (queryParamValue == null) {
-      if (!QueryParam.DEFAULT_VALUE.equals(queryParam.defaultValue())) {
-        queryParamValue = queryParam.defaultValue();
-      } else if (queryParam.required()) {
-        throw new QueryParamRequiredNotFoundException(queryParam.value());
-      }
+    if(queryParam.required() && !values.isPresent()) throw new QueryParamRequiredNotFoundException(queryParam.value());
+
+    if(values.isPresent()){
+      return values.get().stream().findFirst().get();
     }
 
-    return queryParamValue;
+
+    return queryParam.defaultValue();
+
   }
 }

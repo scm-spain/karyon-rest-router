@@ -207,4 +207,20 @@ public class KaryonRestRouterTest {
             .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
     Assert.assertEquals(HttpResponseStatus.NOT_FOUND, status);
   }
+
+  @Test
+  public void testEndpointDefaultQueryParamSystem() throws Exception {
+
+    String body =
+            RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
+                    .submit(HttpClientRequest.createGet("/example_path_default_system"))
+                    .flatMap(response -> {
+                        Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
+                        return response.getContent().<String>map(content -> content.toString(Charset.defaultCharset()));
+                    })
+                    .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
+    Assert.assertEquals("I'm the default queryparam", body);
+
+  }
+
 }

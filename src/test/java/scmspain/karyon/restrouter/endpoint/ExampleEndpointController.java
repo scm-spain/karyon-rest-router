@@ -97,5 +97,10 @@ public class ExampleEndpointController {
     return response.writeStringAndFlush("I'm the parameterized one");
   }
 
+  @Path(value = "/example_path_default_system", method = HttpMethod.GET)
+  public Observable<Void> defaultValueEndpoint(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response, @QueryParam(value = "Ni") String filter) {
+    return response.writeStringAndFlush("I'm the default queryparam"+filter);
+  }
+
 }
 
