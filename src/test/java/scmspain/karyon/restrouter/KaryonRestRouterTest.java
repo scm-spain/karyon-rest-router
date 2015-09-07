@@ -183,6 +183,28 @@ public class KaryonRestRouterTest {
             .finallyDo(() -> finishLatch.countDown())
             .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
     Assert.assertEquals("Example endpoint controller with DELETE!", body);
+  }
 
+  @Test
+  public void testEndpointPrecedence() throws Exception {
+      String body =
+              RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
+                      .submit(HttpClientRequest.createGet("/example_path/hardcoded_param"))
+                      .flatMap(response -> {
+                          Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
+                          return response.getContent().<String>map(content -> content.toString(Charset.defaultCharset()));
+                      })
+                      .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
+      Assert.assertEquals("I'm the hardcoded one", body);
+  }
+
+  @Test
+  public void testPathNotFound() throws Exception {
+    HttpResponseStatus status =
+        RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
+            .submit(HttpClientRequest.createGet("/unexistant_path"))
+            .map(response -> response.getStatus())
+            .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
+    Assert.assertEquals(HttpResponseStatus.NOT_FOUND, status);
   }
 }

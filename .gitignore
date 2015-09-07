@@ -18,3 +18,11 @@ gradle-app.setting
 
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
+
+
+#Ignore intellij project files
+.idea
+*.iml
+
+#Ignore .gradle dir
+.gradle
