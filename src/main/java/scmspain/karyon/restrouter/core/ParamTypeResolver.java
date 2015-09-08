@@ -15,6 +15,12 @@ public class ParamTypeResolver<T> {
       return (T)Double.valueOf(value);
     } else if (classType.isAssignableFrom(boolean.class) || classType.isAssignableFrom(Boolean.class)) {
       return (T)Boolean.valueOf(value);
+    } else if (classType.isAssignableFrom(long.class) || classType.isAssignableFrom(Long.class)) {
+      return (T)Boolean.valueOf(value);
+    } else if (classType.isAssignableFrom(short.class) || classType.isAssignableFrom(Short.class)) {
+      return (T)Boolean.valueOf(value);
+    } else if (classType.isAssignableFrom(float.class) || classType.isAssignableFrom(Float.class)) {
+      return (T)Boolean.valueOf(value);
     }
     return null;
   }
