@@ -6,6 +6,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
 
 import static org.junit.Assert.*;
 
@@ -52,8 +53,8 @@ public class ParamTypeResolverTest<T> {
     assertEquals(expectedClass, parameterResolver.resolveValueType(type, value).getClass());
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void itShouldReturnsErrorIfCanNotResolveValueType() {
+  @Test(expected = UnsupportedFormatException.class)
+  public void itShouldReturnsErrorIfCanNotResolveValueType() throws Exception {
     Class anyUnsupportedClass = Byte.class;
     parameterResolver.resolveValueType(anyUnsupportedClass, "byte");
   }

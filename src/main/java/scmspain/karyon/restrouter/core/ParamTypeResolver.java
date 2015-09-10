@@ -1,6 +1,7 @@
 package scmspain.karyon.restrouter.core;
 
 import com.google.inject.Singleton;
+import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,12 +28,12 @@ public class ParamTypeResolver<T> {
     put(Float.class, (val) -> (T) Float.valueOf(val));
   }};
 
-  public T resolveValueType(Class<T> classType, String value){
+  public T resolveValueType(Class<T> classType, String value) throws UnsupportedFormatException {
 
     return Optional
       .ofNullable(resolver.get(classType))
       .map(casting -> casting.apply(value))
-      .orElseThrow(() -> new IllegalArgumentException(classType.getName() + " is not supported."));
+      .orElseThrow(() -> new UnsupportedFormatException(classType.getName()));
   }
 
 }
