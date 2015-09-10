@@ -11,7 +11,10 @@ public class PathParamAnnotation implements ParamAnnotation {
   private final PathParam annotation;
   private Map<String, String> pathParams;
 
-  public PathParamAnnotation(PathParam annotation,Map<String, String> pathParams) {
+  public PathParamAnnotation(
+      PathParam annotation,Map<String,
+      String> pathParams
+  ) {
     this.annotation = annotation;
     this.pathParams = pathParams;
   }

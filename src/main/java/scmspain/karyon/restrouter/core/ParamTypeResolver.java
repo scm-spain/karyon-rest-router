@@ -2,27 +2,38 @@ package scmspain.karyon.restrouter.core;
 
 import com.google.inject.Singleton;
 
+import java.util.*;
+import java.util.function.Function;
+
 @Singleton
 public class ParamTypeResolver<T> {
 
+  Map<Class, Function<String, T>> resolver= new HashMap<>();
+
+  ParamTypeResolver() {
+
+    resolver.put(int.class, (val) -> (T) Integer.valueOf(val));
+    resolver.put(double.class, (val) -> (T) Double.valueOf(val));
+    resolver.put(boolean.class, (val) -> (T) Boolean.valueOf(val));
+    resolver.put(long.class, (val) -> (T) Long.valueOf(val));
+    resolver.put(short.class, (val) -> (T) Short.valueOf(val));
+    resolver.put(float.class, (val) -> (T) Float.valueOf(val));
+
+    resolver.put(String.class, (val) -> (T) val);
+    resolver.put(Integer.class, (val) -> (T) Integer.valueOf(val));
+    resolver.put(Double.class, (val) -> (T) Double.valueOf(val));
+    resolver.put(Boolean.class, (val) -> (T) Boolean.valueOf(val));
+    resolver.put(Long.class, (val) -> (T) Long.valueOf(val));
+    resolver.put(Short.class, (val) -> (T) Short.valueOf(val));
+    resolver.put(Float.class, (val) -> (T) Float.valueOf(val));
+  }
 
   public T resolveValueType(Class<T> classType, String value){
-    if (classType.isAssignableFrom(String.class)) {
-      return (T)value;
-    } else if (classType.isAssignableFrom(int.class) || classType.isAssignableFrom(Integer.class)) {
-      return (T)Integer.valueOf(value);
-    } else if (classType.isAssignableFrom(double.class) || classType.isAssignableFrom(Double.class)) {
-      return (T)Double.valueOf(value);
-    } else if (classType.isAssignableFrom(boolean.class) || classType.isAssignableFrom(Boolean.class)) {
-      return (T)Boolean.valueOf(value);
-    } else if (classType.isAssignableFrom(long.class) || classType.isAssignableFrom(Long.class)) {
-      return (T)Long.valueOf(value);
-    } else if (classType.isAssignableFrom(short.class) || classType.isAssignableFrom(Short.class)) {
-      return (T)Short.valueOf(value);
-    } else if (classType.isAssignableFrom(float.class) || classType.isAssignableFrom(Float.class)) {
-      return (T)Float.valueOf(value);
-    }
-    return null;
+
+    return Optional
+        .ofNullable(resolver.get(classType))
+        .map(casting -> casting.apply(value))
+        .orElse(null);
   }
 
 }
