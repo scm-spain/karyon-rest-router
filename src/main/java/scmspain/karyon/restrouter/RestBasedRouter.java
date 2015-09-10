@@ -24,6 +24,7 @@ import scmspain.karyon.restrouter.core.MethodParameterResolver;
 import scmspain.karyon.restrouter.core.ResourceLoader;
 import scmspain.karyon.restrouter.core.URIParameterParser;
 import scmspain.karyon.restrouter.exception.ParamAnnotationException;
+import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 
 import static org.reflections.ReflectionUtils.*;
@@ -95,6 +96,11 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
             } catch (ParamAnnotationException e) {
               response.setStatus(HttpResponseStatus.BAD_REQUEST);
               return Observable.empty();
+            } catch (UnsupportedFormatException e) {
+              response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+              throw new RuntimeException(
+                String.format("Impossible to resolve params in method \"%s\" ",
+                  method.toString()), e);
             } catch (InvocationTargetException e) {
               response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
               throw new RuntimeException("Exception invoking method " + method.toString(), e);
