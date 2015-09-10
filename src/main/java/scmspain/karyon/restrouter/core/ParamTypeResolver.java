@@ -2,13 +2,15 @@ package scmspain.karyon.restrouter.core;
 
 import com.google.inject.Singleton;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 @Singleton
 public class ParamTypeResolver<T> {
 
-  Map<Class, Function<String, T>> resolver= new HashMap<>();
+  private Map<Class, Function<String, T>> resolver= new HashMap<>();
 
   ParamTypeResolver() {
 
@@ -31,9 +33,9 @@ public class ParamTypeResolver<T> {
   public T resolveValueType(Class<T> classType, String value){
 
     return Optional
-        .ofNullable(resolver.get(classType))
-        .map(casting -> casting.apply(value))
-        .orElse(null);
+      .ofNullable(resolver.get(classType))
+      .map(casting -> casting.apply(value))
+      .orElseThrow(() -> new IllegalArgumentException(classType.getName() + " is not supported."));
   }
 
 }
