@@ -21,6 +21,7 @@ dependencies {
     testCompile 'org.powermock:powermock-module-junit4:1.6.2'
     testCompile 'com.sun.jersey:jersey-core:1.19'
     testCompile 'com.netflix.karyon:karyon2-archaius:2.7.1'
+    testCompile 'com.tngtech.java:junit-dataprovider:1.10.0'
     compile 'com.netflix.karyon:karyon2-core:2.5.1'
     compile 'com.netflix.karyon:karyon2-governator:2.5.1'
     compile 'org.reflections:reflections:0.9.9'

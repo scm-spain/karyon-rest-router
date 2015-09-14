@@ -11,6 +11,7 @@ import java.util.Map;
 import scmspain.karyon.restrouter.annotation.PathParam;
 import scmspain.karyon.restrouter.annotation.QueryParam;
 import scmspain.karyon.restrouter.exception.ParamAnnotationException;
+import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
 
 @Singleton
 public class MethodParameterResolver {
@@ -22,7 +23,14 @@ public class MethodParameterResolver {
     this.paramTypeResolver = paramTypeResolver;
   }
 
-  public Object[] resolveParameters(Method method, HttpServerRequest request, HttpServerResponse response, Map<String, String> pathParams, Map<String, List<String>> queryParams) throws ParamAnnotationException {
+  public Object[] resolveParameters(
+    Method method,
+    HttpServerRequest request,
+    HttpServerResponse response,
+    Map<String, String> pathParams,
+    Map<String, List<String>> queryParams
+  ) throws ParamAnnotationException, UnsupportedFormatException
+  {
 
     Annotation[][] parametersAnnotations = method.getParameterAnnotations();
     Class[] parametersTypes = method.getParameterTypes();
