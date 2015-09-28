@@ -19,6 +19,12 @@ public class ExampleEndpointController {
 
   }
 
+  @Path(value = "/exampleinteger/{id}", method = HttpMethod.GET)
+  public Observable<Integer> getEndpointWithQueryParamsReturnIntegegerObs(HttpServerResponse<ByteBuf> response, @PathParam("id") String id, @QueryParam("filter") String filter) {
+    response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
+    return Observable.just(Integer.parseInt(id));
+  }
+
 
   @Path(value = "/example/{id}", method = HttpMethod.GET)
    public Observable<Void> getEndpointResource(HttpServerResponse<ByteBuf> response, @PathParam("id") String id) {

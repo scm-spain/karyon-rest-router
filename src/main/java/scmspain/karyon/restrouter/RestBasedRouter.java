@@ -10,6 +10,18 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import io.reactivex.netty.protocol.http.server.RequestHandler;
+import rx.Observable;
+import scmspain.karyon.restrouter.annotation.Endpoint;
+import scmspain.karyon.restrouter.annotation.Path;
+import scmspain.karyon.restrouter.core.MethodParameterResolver;
+import scmspain.karyon.restrouter.core.ResourceLoader;
+import scmspain.karyon.restrouter.core.URIParameterParser;
+import scmspain.karyon.restrouter.exception.HandlerNotFoundException;
+import scmspain.karyon.restrouter.exception.ParamAnnotationException;
+import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
+import scmspain.karyon.restrouter.transport.http.RestUriRouter;
+import scmspain.karyon.restrouter.transport.http.RouteInterceptorSupport;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -17,17 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import rx.Observable;
-import scmspain.karyon.restrouter.annotation.Endpoint;
-import scmspain.karyon.restrouter.annotation.Path;
-import scmspain.karyon.restrouter.core.MethodParameterResolver;
-import scmspain.karyon.restrouter.core.ResourceLoader;
-import scmspain.karyon.restrouter.core.URIParameterParser;
-import scmspain.karyon.restrouter.exception.ParamAnnotationException;
-import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
-import scmspain.karyon.restrouter.transport.http.RestUriRouter;
-
-import static org.reflections.ReflectionUtils.*;
+import static org.reflections.ReflectionUtils.getAllMethods;
+import static org.reflections.ReflectionUtils.withAnnotation;
+import static org.reflections.ReflectionUtils.withModifier;
+import static org.reflections.ReflectionUtils.withReturnType;
 
 public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
 
@@ -37,6 +42,7 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
   private final RestUriRouter<ByteBuf, ByteBuf> delegate = new RestUriRouter<ByteBuf, ByteBuf>();
   private MethodParameterResolver rmParameterInjector;
   private ResourceLoader resourceLoader;
+  private RouteInterceptorSupport routeInterceptorSupport;
 
   /**
    * Wrapper class, used like a struct to encapsulate info regarding
@@ -57,12 +63,17 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
   }
 
   @Inject
-  public RestBasedRouter(Injector inject, URIParameterParser parameterParser,
-                         MethodParameterResolver rmParameterInjector, ResourceLoader resourceLoader) {
+  public RestBasedRouter(Injector inject,
+                         URIParameterParser parameterParser,
+                         MethodParameterResolver rmParameterInjector,
+                         ResourceLoader resourceLoader,
+                         RouteInterceptorSupport routeInterceptorSupport) {
+
     this.injector = inject;
     this.parameterParser = parameterParser;
     this.rmParameterInjector = rmParameterInjector;
     this.resourceLoader = resourceLoader;
+    this.routeInterceptorSupport = routeInterceptorSupport;
 
     String basePackage = ConfigurationManager.getConfigInstance().getString(BASE_PACKAGE_PROPERTY);
     Set<Class<?>> annotatedTypes = resourceLoader.find(basePackage, Endpoint.class);
@@ -84,38 +95,151 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
           Method method = endpoint.method;
           String uriRegex = parameterParser.getUriRegex(endpoint.uri);
           delegate.addUriRegex(uriRegex, endpoint.verb, (request, response) -> {
-            try {
-              Map<String, String> params = parameterParser.getParams(endpoint.uri, request.getUri());
-              Map<String, List<String>> queryParams = request.getQueryParameters();
-              Object[] invokeParams = rmParameterInjector.resolveParameters(method, request, response, params, queryParams);
-              return (Observable) method.invoke(injector.getInstance(endpoint.klass), invokeParams);
-            } catch (IllegalAccessException e) {
-              //Should never get here
-              response.setStatus(HttpResponseStatus.FORBIDDEN);
-              throw new RuntimeException("Exception invoking method: " + method.toString());
-            } catch (ParamAnnotationException e) {
-              response.setStatus(HttpResponseStatus.BAD_REQUEST);
-              return Observable.empty();
-            } catch (UnsupportedFormatException e) {
-              response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-              throw new RuntimeException(
-                String.format("Impossible to resolve params in method \"%s\" ",
-                  method.toString()), e);
-            } catch (InvocationTargetException e) {
-              response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-              throw new RuntimeException("Exception invoking method " + method.toString(), e);
-            }
+            return processRouteHandler(endpoint, method, request, response);
           });
 
         });
   }
 
+  private Observable<Object> processRouteHandler(
+      EndpointDefinition endpoint,
+      Method method,
+      HttpServerRequest<ByteBuf> request,
+      HttpServerResponse<ByteBuf> response) {
+
+    try {
+      Map<String, String> params = parameterParser.getParams(endpoint.uri, request.getUri());
+      Map<String, List<String>> queryParams = request.getQueryParameters();
+      Object[] invokeParams = rmParameterInjector.resolveParameters(
+          method,
+          request,
+          response,
+          params,
+          queryParams);
+
+      return (Observable) method.invoke(injector.getInstance(endpoint.klass), invokeParams);
+
+    } catch (IllegalAccessException e) {
+      //Should never get here
+      response.setStatus(HttpResponseStatus.FORBIDDEN);
+      throw new RuntimeException("Exception invoking method: " + method.toString());
+    } catch (ParamAnnotationException e) {
+      response.setStatus(HttpResponseStatus.BAD_REQUEST);
+      return Observable.empty();
+    } catch (UnsupportedFormatException e) {
+      response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+      throw new RuntimeException(
+          String.format("Impossible to resolve params in method \"%s\" ",
+              method.toString()), e);
+    } catch (InvocationTargetException e) {
+      response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+      throw new RuntimeException("Exception invoking method " + method.toString(), e);
+    }
+  }
 
 
   @Override
   public Observable<Void> handle(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
-    return delegate.handle(request, response);
+    Observable<Object> resultObs = null;
+
+    try {
+      resultObs = delegate.handle(request, response);
+    } catch (HandlerNotFoundException e) {
+      response.setStatus(HttpResponseStatus.NOT_FOUND);
+      return response.close();
+    }
+
+    return this.routeInterceptorSupport.execute(resultObs, request, response);
   }
 
+  /*public static void main(String[] args) throws IOException {
+    ObjectMapper om = new ObjectMapper();
+    om = new ObjectMapper();
 
+    om.disable(
+        SerializationConfig.Feature.AUTO_DETECT_GETTERS,
+        SerializationConfig.Feature.AUTO_DETECT_FIELDS,
+        SerializationConfig.Feature.AUTO_DETECT_IS_GETTERS);
+
+    List<Test> list = new ArrayList<>();
+    list.add(buildTest(1,"a", 1, true));
+    list.add(buildTest(2,"b", 2, false));
+    list.add(buildTest(3,"c", 3, false));
+    list.add(buildTest(4, "d", 4, true));
+    list.add(buildTest(5, "e", 5, false));
+
+    System.out.println(om.writeValueAsString(list));
+  }
+
+  private static Test buildTest(int id, String value, int count,boolean isProperty) {
+    Test test = new Test();
+    test.setId(id);
+    test.setValue(value);
+    test.setFoo(buildFoo(count, isProperty));
+    return test;
+  }
+
+  private static Foo buildFoo(int count, boolean isProperty) {
+    Foo foo = new Foo();
+    foo.setCount(count);
+    foo.setIsProperty(isProperty);
+
+    return foo;
+  }
+
+  public static class Foo {
+    @JsonProperty
+    private int count;
+    @JsonProperty
+    private boolean isProperty;
+
+    public int getCount() {
+      return count;
+    }
+
+    public void setCount(int count) {
+      this.count = count;
+    }
+
+    public boolean isProperty() {
+      return isProperty;
+    }
+
+    public void setIsProperty(boolean isProperty) {
+      this.isProperty = isProperty;
+    }
+  }
+
+  public static class Test {
+    @JsonProperty
+    private int id;
+    @JsonProperty
+    private String value;
+    @JsonProperty
+    private Foo foo;
+
+    public String getValue() {
+      return value;
+    }
+
+    public void setValue(String value) {
+      this.value = value;
+    }
+
+    public int getId() {
+      return id;
+    }
+
+    public void setId(int id) {
+      this.id = id;
+    }
+
+    public Foo getFoo() {
+      return foo;
+    }
+
+    public void setFoo(Foo foo) {
+      this.foo = foo;
+    }
+  }*/
 }

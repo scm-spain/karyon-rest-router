@@ -8,19 +8,19 @@ import netflix.karyon.transport.interceptor.InterceptorKey;
 public class Route<I, O> {
 
   private final InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key;
-  private final RequestHandler<I, O> handler;
+  private final RouteHandler<I, O> routeHandler;
 
   public Route(InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key,
-               RequestHandler<I, O> handler) {
+               RouteHandler<I, O> routeHandler) {
     this.key = key;
-    this.handler = handler;
+    this.routeHandler = routeHandler;
   }
 
   public InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> getKey() {
     return key;
   }
 
-  public RequestHandler<I, O> getHandler() {
-    return handler;
+  public RouteHandler<I, O> getHandler() {
+    return routeHandler;
   }
 }

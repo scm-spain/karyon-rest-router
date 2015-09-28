@@ -10,9 +10,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
 import rx.Observable;
+import scmspain.karyon.restrouter.exception.HandlerNotFoundException;
 
 
-public class RestUriRouter<I, O> implements RequestHandler<I, O> {
+public class RestUriRouter<I, O> {
 
   private final CopyOnWriteArrayList<Route<I,O>> routes;
 
@@ -20,16 +21,12 @@ public class RestUriRouter<I, O> implements RequestHandler<I, O> {
     routes = new CopyOnWriteArrayList<>();
   }
 
-  @Override
-  public Observable<Void> handle(HttpServerRequest<I> request, HttpServerResponse<O> response) {
+  public Observable<Object> handle(HttpServerRequest<I> request, HttpServerResponse<O> response) {
     Optional<Route<I,O>> bestRoute = findBestMatch(request, response);
 
     return bestRoute
-        .map(r -> r.getHandler().handle(request, response))
-        .orElseGet(() -> {
-          response.setStatus(HttpResponseStatus.NOT_FOUND);
-          return response.close();
-        });
+        .map(r -> r.getHandler().process(request, response))
+            .orElseThrow(HandlerNotFoundException::new);
   }
 
   /**
@@ -40,7 +37,7 @@ public class RestUriRouter<I, O> implements RequestHandler<I, O> {
    * @param verb Request verb.
    * @return The updated router.
    */
-  public RestUriRouter<I, O> addUriRegex(String uriRegEx, String verb, RequestHandler<I, O> handler) {
+  public RestUriRouter<I, O> addUriRegex(String uriRegEx, String verb, RouteHandler<I, O> handler) {
     routes.add(new Route(new EnhancedRegexUriConstraintKey<I>(uriRegEx, verb), handler));
     return this;
   }
