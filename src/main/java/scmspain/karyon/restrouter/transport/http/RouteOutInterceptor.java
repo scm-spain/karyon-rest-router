@@ -10,7 +10,7 @@ import java.util.Objects;
 /**
  * Created by borja.vazquez on 25/9/15.
  */
-public interface RouteInterceptor<T> {
+public interface RouteOutInterceptor<T> {
 
   Observable<T> intercept(Observable<Object> result, HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response);
 }

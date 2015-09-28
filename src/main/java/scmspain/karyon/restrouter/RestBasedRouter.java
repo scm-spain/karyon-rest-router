@@ -140,7 +140,7 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
 
   @Override
   public Observable<Void> handle(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
-    Observable<Object> resultObs = null;
+    Observable<Object> resultObs;
 
     try {
       resultObs = delegate.handle(request, response);

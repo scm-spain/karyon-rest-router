@@ -2,7 +2,7 @@ package scmspain.karyon.restrouter;
 
 import io.netty.buffer.ByteBuf;
 import netflix.karyon.transport.http.KaryonHttpModule;
-import scmspain.karyon.restrouter.transport.http.RouteInterceptor;
+import scmspain.karyon.restrouter.transport.http.RouteOutInterceptor;
 import scmspain.karyon.restrouter.transport.http.RouteInterceptorSupport;
 
 public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, ByteBuf> {
@@ -17,8 +17,8 @@ public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, B
     super(moduleName, ByteBuf.class, ByteBuf.class);
   }
 
-  public void addRouteInterceptor(RouteInterceptor routeInterceptor) {
-    routeInterceptorSupport.addInterceptor(routeInterceptor);
+  public void addRouteInterceptor(RouteOutInterceptor routeOutInterceptor) {
+    routeInterceptorSupport.addOutInterceptor(routeOutInterceptor);
   }
 
 
