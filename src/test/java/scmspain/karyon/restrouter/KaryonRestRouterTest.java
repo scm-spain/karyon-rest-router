@@ -229,7 +229,7 @@ public class KaryonRestRouterTest {
     final CountDownLatch finishLatch = new CountDownLatch(1);
     String body =
         RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
-            .submit(HttpClientRequest.createGet("/exampleinteger/1?filter=barcelona"))
+            .submit(HttpClientRequest.createGet("/example_json_interceptor/1?filter=barcelona"))
             .flatMap(response -> {
               Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
               return response.getContent().<String>map(content -> {
@@ -243,7 +243,7 @@ public class KaryonRestRouterTest {
             .finallyDo(() -> finishLatch.countDown())
             .toBlocking().first();
 
-    Assert.assertEquals("1", body);
+    Assert.assertEquals("{\"value\":\"1\"}", body);
 
 
   }

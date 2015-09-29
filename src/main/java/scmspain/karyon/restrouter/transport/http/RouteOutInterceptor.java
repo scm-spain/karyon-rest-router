@@ -12,5 +12,5 @@ import java.util.Objects;
  */
 public interface RouteOutInterceptor<T> {
 
-  Observable<T> intercept(Observable<Object> result, HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response);
+  Observable<T> intercept(Observable<Object> responseBodyObs, HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response);
 }
