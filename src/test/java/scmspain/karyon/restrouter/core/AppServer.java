@@ -24,6 +24,8 @@ public interface AppServer {
       server()
           .port(DEFAULT_PORT)
           .threadPoolSize(DEFAULT_THREADS_POOL_SIZE);
+
+      this.addRouteInterceptor(new TestJsonRouteOutInterceptor());
     }
 
     @Override

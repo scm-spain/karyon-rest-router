@@ -191,8 +191,8 @@ public class KaryonRestRouterTest {
               RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
                       .submit(HttpClientRequest.createGet("/example_path/hardcoded_param"))
                       .flatMap(response -> {
-                          Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
-                          return response.getContent().<String>map(content -> content.toString(Charset.defaultCharset()));
+                        Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
+                        return response.getContent().<String>map(content -> content.toString(Charset.defaultCharset()));
                       })
                       .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
       Assert.assertEquals("I'm the hardcoded one", body);
@@ -215,11 +215,36 @@ public class KaryonRestRouterTest {
             RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
                     .submit(HttpClientRequest.createGet("/example_path_default_system"))
                     .flatMap(response -> {
-                        Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
-                        return response.getContent().<String>map(content -> content.toString(Charset.defaultCharset()));
+                      Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
+                      return response.getContent().<String>map(content -> content.toString(Charset.defaultCharset()));
                     })
                     .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
     Assert.assertEquals("I'm the default queryparam", body);
+
+  }
+
+
+  @Test
+  public void testEndpointWithQueryParamsReturnIntegerObs() throws Exception {
+    final CountDownLatch finishLatch = new CountDownLatch(1);
+    String body =
+        RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
+            .submit(HttpClientRequest.createGet("/example_json_interceptor/1?filter=barcelona"))
+            .flatMap(response -> {
+              Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
+              return response.getContent().<String>map(content -> {
+                if (content == null) {
+                  return "";
+                } else {
+                  return content.toString(Charset.defaultCharset());
+                }
+              });
+            })
+            .finallyDo(() -> finishLatch.countDown())
+            .toBlocking().first();
+
+    Assert.assertEquals("{\"value\":\"1\"}", body);
+
 
   }
 
