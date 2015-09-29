@@ -24,18 +24,7 @@ public interface AppServer {
       server()
           .port(DEFAULT_PORT)
           .threadPoolSize(DEFAULT_THREADS_POOL_SIZE);
-//      this.addRouteInterceptor((result, request, response) -> {
-//        Observable<Integer> integerObs = (Observable) result;
-//        return integerObs.map(i -> i * 5);
-//      });
-//      this.addRouteInterceptor((result, request, response) -> {
-//        Observable<Integer> integerObs = (Observable) result;
-//        return integerObs.map(i -> i + 1);
-//      });
-//      this.addRouteInterceptor((result, request, response) -> {
-//        Observable<Integer> integerObs = (Observable) result;
-//        return integerObs.map(i -> i/2);
-//      });
+
       this.addRouteInterceptor(new TestJsonRouteOutInterceptor());
     }
 
