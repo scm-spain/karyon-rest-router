@@ -33,8 +33,4 @@ public class Route<I, O> {
     return true;
   }
 
-  public Observable<Object> process(HttpServerRequest<I> request, HttpServerResponse<I> response) {
-    // TODO: ejecutar handler
-    return null;
-  }
 }

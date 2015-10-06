@@ -17,7 +17,7 @@ import scmspain.karyon.restrouter.core.MethodParameterResolver;
 import scmspain.karyon.restrouter.core.ResourceLoader;
 import scmspain.karyon.restrouter.core.URIParameterParser;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
-import scmspain.karyon.restrouter.exception.HandlerNotFoundException;
+import scmspain.karyon.restrouter.exception.RouteNotFoundException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
 import scmspain.karyon.restrouter.exception.ParamAnnotationException;
 import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
@@ -30,7 +30,6 @@ import scmspain.karyon.restrouter.transport.http.RouteInterceptorSupport;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,7 +45,7 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
   public static final String BASE_PACKAGE_PROPERTY = "com.scmspain.karyon.rest.property.packages";
   private final Injector injector;
   private final URIParameterParser parameterParser;
-  private final RestUriRouter<ByteBuf, ByteBuf> delegate = new RestUriRouter<ByteBuf, ByteBuf>();
+  private final RestUriRouter<ByteBuf, ByteBuf> restUriRouter = new RestUriRouter<ByteBuf, ByteBuf>();
   private MethodParameterResolver rmParameterInjector;
   private ResourceLoader resourceLoader;
   private RouteInterceptorSupport routeInterceptorSupport;
@@ -104,7 +103,7 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
         .forEach(endpoint -> {
           Method method = endpoint.method;
           String uriRegex = parameterParser.getUriRegex(endpoint.uri);
-          delegate.addUriRegex(uriRegex, endpoint.verb, (request, response) -> {
+          restUriRouter.addUriRegex(uriRegex, endpoint.verb, (request, response) -> {
             return processRouteHandler(endpoint, method, request, response);
           });
 
@@ -151,54 +150,34 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
   @Override
   public Observable<Void> handle(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
     Observable<Object> resultObs;
-    String contentType = defaultContentType;
     List<String> supportedContentTypes = serializer.getSupportedContentTypes();
+    String contentType = defaultContentType;
+
+    Route<ByteBuf, ByteBuf> route =  restUriRouter.findBestMatch(request, response)
+        .orElse(new RouteNotFound<>());
+
+    boolean negociateAccept = route.isBasedOnSerializers();
 
     try {
-      // si no hay handler deberia tirar exception HandlerNotFoundE
-      Route<ByteBuf, ByteBuf> handler =  delegate.findBestMatch(request, response)
-          .orElseThrow(HandlerNotFoundException::new);
-
-      try {
-        if (handler.isBasedOnSerializers()) {
-
-          contentType = acceptNegociation(supportedContentTypes);
-        }
-        resultObs = handler.process(request, response);
-
-      } catch (CannotSerializeException|InvalidAcceptHeaderException e) {
-        resultObs = Observable.error(e);
-      }
-
-      // TODO: resultObs has errors
-      resultObs = resultObs.onErrorReturn(throwable ->
-        errorHandler.handleError(throwable, /*canSerializeError = */ handler.isBasedOnSerializers())
-      );
-
-      if (handler.isBasedOnSerializers()) {
-        return serializer.serialize(resultObs, contentType);
-
-      } else {
-        // FIXME: Type generic type checking
-        return (Observable)resultObs;
-      }
-
-    } catch (HandlerNotFoundException e) {
-      // TODO: Revisar si enviar el status code aqui
-      response.setStatus(HttpResponseStatus.NOT_FOUND);
-
-      try{
+      if (negociateAccept) {
         contentType = acceptNegociation(supportedContentTypes);
-      } catch (CannotSerializeException|InvalidAcceptHeaderException ex) {
-        contentType = defaultContentType;
       }
+      resultObs = route.getHandler().process(request, response);
 
-      // TODO: enviar DTO de error en vez de empty
-      return serializer.serialize(Observable.empty(), contentType);
+    } catch (CannotSerializeException|InvalidAcceptHeaderException e) {
+      resultObs = Observable.error(e);
+    }
 
-    }catch(Exception e) {
-      // TODO: send error 500
-      throw e;
+    resultObs = resultObs.onErrorReturn(throwable ->
+      errorHandler.handleError(throwable, /*canSerializeError = */ negociateAccept)
+    );
+
+    if (negociateAccept) {
+      return serializer.serialize(resultObs, contentType);
+
+    } else {
+      // FIXME: Generic type checking
+      return (Observable)resultObs;
     }
   }
 
@@ -206,5 +185,18 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
   private String acceptNegociation(List<String> supportedContentTypes) {
     return null;
   }
+
+
+  class RouteNotFound<I,O> extends Route<I,O> {
+    public RouteNotFound() {
+      super((request, context) -> true, new RouteNotFoundHandler<>());
+    }
+
+    @Override
+    public boolean isBasedOnSerializers() {
+      return true;
+    }
+  }
+
 
 }

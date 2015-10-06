@@ -1,16 +1,14 @@
 package scmspain.karyon.restrouter.transport.http;
 
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
-import io.reactivex.netty.protocol.http.server.RequestHandler;
 
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
 import rx.Observable;
-import scmspain.karyon.restrouter.exception.HandlerNotFoundException;
+import scmspain.karyon.restrouter.exception.RouteNotFoundException;
 
 
 public class RestUriRouter<I, O> {
@@ -26,7 +24,7 @@ public class RestUriRouter<I, O> {
 
     return bestRoute
         .map(r -> r.getHandler().process(request, response))
-            .orElseThrow(HandlerNotFoundException::new);
+            .orElseThrow(RouteNotFoundException::new);
   }
 
   /**
