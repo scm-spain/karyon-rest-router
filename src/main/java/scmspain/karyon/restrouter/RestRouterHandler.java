@@ -1,10 +1,13 @@
 package scmspain.karyon.restrouter;
 
 import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
 import io.netty.buffer.ByteBuf;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import io.reactivex.netty.protocol.http.server.RequestHandler;
+import org.apache.commons.lang.StringUtils;
+import org.commonjava.mimeparse.MIMEParse;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
@@ -89,12 +92,35 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   private String acceptNegociation(HttpServerRequest<ByteBuf> request, Set<String> supportedContentTypes) {
     String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
 
-    if (accept == null || "".equals(accept)) {
-       return this.serializerManager.getDefaultContentType();
+    if (StringUtils.isBlank(accept)) {
+      return this.serializerManager.getDefaultContentType();
+    } else {
+      return getSerializerContentType(accept);
     }
 
-
-    return null;
   }
 
+  private String getSerializerContentType(String acceptHeader) {
+    try {
+      return MIMEParse.bestMatch(serializerManager.getSupportedMediaTypes(), acceptHeader);
+
+    } catch(IllegalArgumentException e) {
+      throw new CannotSerializeException(acceptHeader, e);
+    }
+
+  }
+
+//  private void validateAcceptValue(String acceptHeaderValue) {
+//    String[] mediaTypesStr = acceptHeaderValue.split(",");
+//
+//    try {
+//      Stream.of(mediaTypesStr)
+//          .map(MediaType::parse)
+//          .collect(Collectors.toList());
+//
+//
+//    } catch (IllegalArgumentException e) {
+//      throw new InvalidAcceptHeaderException(e);
+//    }
+//  }
 }

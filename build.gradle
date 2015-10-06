@@ -42,6 +42,8 @@ dependencies {
     compile 'com.netflix.karyon:karyon2-core:2.5.1'
     compile 'com.netflix.karyon:karyon2-governator:2.5.1'
     compile 'org.reflections:reflections:0.9.9'
+
+    compile 'org.commonjava.mimeparse:mimeparse:0.1.3.3' // https://github.com/jdcasey/mimeparse
 }
 
 tasks.withType(Test) {

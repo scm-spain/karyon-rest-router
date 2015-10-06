@@ -1,5 +1,6 @@
 package scmspain.karyon.restrouter;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import io.netty.buffer.ByteBuf;
@@ -11,7 +12,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import rx.Observable;
-import rx.observers.TestSubscriber;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.serializer.Serializer;
@@ -19,13 +19,11 @@ import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 import scmspain.karyon.restrouter.transport.http.Route;
 import scmspain.karyon.restrouter.transport.http.RouteHandler;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -62,6 +60,7 @@ public class RestRouterHandlerTest {
   @Mock
   private Object resultBody;
 
+
   @Before
   public void setUp() {
     initMocks(this);
@@ -84,38 +83,47 @@ public class RestRouterHandlerTest {
     given(routeHandler.process(request, response))
         .willReturn(Observable.just(resultBody));
 
+    given(serializerManager.getSupportedMediaTypes())
+        .willReturn(ImmutableSet.of());
+
   }
 
-  private void setEnv(String accept, Set<String> supported, List<String> produces, boolean isCustom) {
-    if (accept != null) {
-      given(request.getHeaders().get(HttpHeaders.ACCEPT)).willReturn(accept);
-    }
-    given(serializerManager.getSupportedMediaTypes())
-        .willReturn(supported);
+  private void setAccept(String accept) {
+    given(request.getHeaders().get(HttpHeaders.ACCEPT))
+        .willReturn(accept);
+  }
 
+  private void setSupportedContents(String... supported) {
+    given(serializerManager.getSupportedMediaTypes())
+        .willReturn(Sets.newHashSet(supported));
+  }
+
+  private void setProduces(String... produces) {
+    given(route.getProduces())
+        .willReturn(Arrays.asList(produces));
+  }
+
+  private void setCustomRoute(boolean isCustom) {
     given(route.isCustom())
         .willReturn(isCustom);
-
-    given(route.getProduces())
-        .willReturn(produces);
-
   }
 
-  private void setSerializer(String contentType) {
-    given(serializerManager.getSerializer(contentType))
-        .willReturn(serializer);
+  private void setSerializerContents(String... contentTypes) {
+    for(String contentType: contentTypes) {
+      given(serializerManager.getSerializer(contentType))
+          .willReturn(serializer);
+    }
   }
 
   @Test
   public void testWhenAcceptIsEmptyThenShouldReturnDefaultContentType() {
     // Given
-    setEnv(null, Sets.newHashSet(), Collections.emptyList(), false);
-    setSerializer("application/json");
-
+    setSupportedContents("application/json");
+    setCustomRoute(false);
+    setSerializerContents("application/json");
 
     // When
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
-
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.toBlocking().first();
@@ -129,6 +137,47 @@ public class RestRouterHandlerTest {
 
   @Test
   public void testWhenAcceptIsJsonAndSupportedIsJsonAndProducesIsEmptyThenShouldReturnJson() {
+    // Given
+    setAccept("application/json");
+    setSupportedContents("application/json");
+    setCustomRoute(false);
+    setSerializerContents("application/json");
 
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.toBlocking().first();
+
+    // Then
+    verify(errorHandler, never()).handleError(any(), anyBoolean(), any());
+    verify(routeHandler).process(request, response);
+    verify(serializer).serialize(eq(resultBody), any());
+    verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
   }
+
+  @Test
+  public void testWhenAcceptIsEmptySupportedIsJsonAndProducesIsJsonThenShouldReturnJson() {
+    // Given
+    setAccept("application/json");
+    setSupportedContents("application/json");
+    setProduces("application/json");
+    setCustomRoute(false);
+    setSerializerContents("application/json");
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.toBlocking().first();
+
+    // Then
+    verify(errorHandler, never()).handleError(any(), anyBoolean(), any());
+    verify(routeHandler).process(request, response);
+    verify(serializer).serialize(eq(resultBody), any());
+    verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+  }
+
+  // TODO: More tests, check Box excel file
+
 }
