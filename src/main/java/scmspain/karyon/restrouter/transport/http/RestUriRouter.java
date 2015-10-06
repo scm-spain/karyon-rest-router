@@ -47,7 +47,7 @@ public class RestUriRouter<I, O> {
    * @param request
    * @param response
    */
-  private Optional<Route<I,O>> findBestMatch(HttpServerRequest<I> request, HttpServerResponse<O> response){
+  public Optional<Route<I,O>> findBestMatch(HttpServerRequest<I> request, HttpServerResponse<O> response){
     HttpKeyEvaluationContext context = new HttpKeyEvaluationContext(response.getChannel());
 
     return routes.stream()

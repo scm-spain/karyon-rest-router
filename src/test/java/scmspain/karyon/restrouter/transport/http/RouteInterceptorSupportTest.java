@@ -41,9 +41,9 @@ public class RouteInterceptorSupportTest {
 
   }
 
-  private RouteOutInterceptor newMockInterceptor() {
+  private RouteFilterChain newMockInterceptor() {
 
-    RouteOutInterceptor interceptor = mock(RouteOutInterceptor.class);
+    RouteFilterChain interceptor = mock(RouteFilterChain.class);
     when(interceptor.intercept(any(), any(), any())).thenReturn(Observable.empty());
 
     return interceptor;
@@ -88,7 +88,7 @@ public class RouteInterceptorSupportTest {
     TestSubscriber<Void> subscriber = new TestSubscriber<>();
     RouteInterceptorSupport routeInterceptorSupport = new RouteInterceptorSupport();
     Observable<Object> responseBodyObs = Observable.just(null);
-    RouteOutInterceptor mockInterceptor = newMockInterceptor();
+    RouteFilterChain mockInterceptor = newMockInterceptor();
 
     routeInterceptorSupport.addOutInterceptor(mockInterceptor);
 
@@ -109,10 +109,10 @@ public class RouteInterceptorSupportTest {
     TestSubscriber<Void> subscriber = new TestSubscriber<>();
     RouteInterceptorSupport routeInterceptorSupport = new RouteInterceptorSupport();
     Observable<Object> responseBodyObs = Observable.just(null);
-    RouteOutInterceptor mockInterceptor1 = newMockInterceptor();
-    RouteOutInterceptor mockInterceptor2 = newMockInterceptor();
-    RouteOutInterceptor mockInterceptor3 = newMockInterceptor();
-    RouteOutInterceptor mockInterceptor4 = newMockInterceptor();
+    RouteFilterChain mockInterceptor1 = newMockInterceptor();
+    RouteFilterChain mockInterceptor2 = newMockInterceptor();
+    RouteFilterChain mockInterceptor3 = newMockInterceptor();
+    RouteFilterChain mockInterceptor4 = newMockInterceptor();
 
 
     routeInterceptorSupport.addOutInterceptor(mockInterceptor1);
@@ -143,7 +143,7 @@ public class RouteInterceptorSupportTest {
     TestSubscriber<Void> subscriber = new TestSubscriber<>();
     RouteInterceptorSupport routeInterceptorSupport = new RouteInterceptorSupport();
     Observable<Object> responseBodyObs = Observable.just(null);
-    RouteOutInterceptor mockInterceptor = mock(RouteOutInterceptor.class);
+    RouteFilterChain mockInterceptor = mock(RouteFilterChain.class);
 
     given(mockInterceptor.intercept(any(), any(), any())).willThrow(new RuntimeException("Error during interception"));
 

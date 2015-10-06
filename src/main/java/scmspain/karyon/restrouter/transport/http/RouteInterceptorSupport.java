@@ -17,10 +17,10 @@ import java.util.List;
 public class RouteInterceptorSupport {
   private static final Logger logger = LoggerFactory.getLogger(RouteInterceptorSupport.class);
 
-  private List<RouteOutInterceptor> routeOutInterceptorList = new ArrayList<>();
+  private List<RouteFilterChain> routeFilterChainList = new ArrayList<>();
 
   public RouteInterceptorSupport() {
-    routeOutInterceptorList.add((result, request, response) -> result.flatMap(value -> {
+    routeFilterChainList.add((result, request, response) -> result.flatMap(value -> {
       if (value == null) {
         return Observable.empty();
       } else {
@@ -31,8 +31,8 @@ public class RouteInterceptorSupport {
     }));
   }
 
-  public void addOutInterceptor(RouteOutInterceptor routeOutInterceptor) {
-    routeOutInterceptorList.add(routeOutInterceptorList.size()-1, routeOutInterceptor);
+  public void addOutInterceptor(RouteFilterChain routeFilterChain) {
+    routeFilterChainList.add(routeFilterChainList.size()-1, routeFilterChain);
   }
 
   /**
@@ -51,15 +51,15 @@ public class RouteInterceptorSupport {
   }
 
   private Observable<?> applyInterceptors(Observable<?> responseBodyObs, HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response, int i) {
-    if(i >= routeOutInterceptorList.size()) {
+    if(i >= routeFilterChainList.size()) {
       return responseBodyObs;
     }
 
-    RouteOutInterceptor routeOutInterceptor = routeOutInterceptorList.get(i);
+    RouteFilterChain routeFilterChain = routeFilterChainList.get(i);
 
     Observable<?> resultObs;
     try {
-      resultObs = routeOutInterceptor.intercept(responseBodyObs, request, response);
+      resultObs = routeFilterChain.intercept(responseBodyObs, request, response);
 
     } catch(Throwable t) {
       /*

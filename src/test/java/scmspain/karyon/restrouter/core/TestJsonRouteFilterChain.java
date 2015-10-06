@@ -5,14 +5,14 @@ import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import org.codehaus.jackson.map.ObjectMapper;
 import rx.Observable;
-import scmspain.karyon.restrouter.transport.http.RouteOutInterceptor;
+import scmspain.karyon.restrouter.transport.http.RouteFilterChain;
 
 import java.io.IOException;
 
 /**
  * Created by borja.vazquez on 25/9/15.
  */
-public class TestJsonRouteOutInterceptor implements RouteOutInterceptor<Void> {
+public class TestJsonRouteFilterChain implements RouteFilterChain<Void> {
 
   /**
    * Serialize the given Object to a JSON String

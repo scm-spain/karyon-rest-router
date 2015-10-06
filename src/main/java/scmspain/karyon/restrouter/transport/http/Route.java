@@ -1,6 +1,8 @@
 package scmspain.karyon.restrouter.transport.http;
 
+import io.netty.buffer.ByteBuf;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
+import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import io.reactivex.netty.protocol.http.server.RequestHandler;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
 import netflix.karyon.transport.interceptor.InterceptorKey;
@@ -26,4 +28,13 @@ public class Route<I, O> {
     return routeHandler;
   }
 
+  public boolean isBasedOnSerializers() {
+    // TODO: Revisar como detectar si esta basado en serializer o no
+    return true;
+  }
+
+  public Observable<Object> process(HttpServerRequest<I> request, HttpServerResponse<I> response) {
+    // TODO: ejecutar handler
+    return null;
+  }
 }
