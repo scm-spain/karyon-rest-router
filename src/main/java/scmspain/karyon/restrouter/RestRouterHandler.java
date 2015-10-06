@@ -1,5 +1,6 @@
 package scmspain.karyon.restrouter;
 
+import com.google.common.net.HttpHeaders;
 import io.netty.buffer.ByteBuf;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
@@ -38,11 +39,11 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     Route<ByteBuf, ByteBuf> route =  restUriRouter.findBestMatch(request, response)
         .orElse(new RouteNotFound<>());
 
-    boolean negociateAccept = route.isBasedOnSerializers();
+    boolean negociateAccept = !route.isCustom();
 
     try {
       if (negociateAccept) {
-        contentType = acceptNegociation(supportedContentTypes);
+        contentType = acceptNegociation(request, supportedContentTypes);
       }
       resultObs = route.getHandler().process(request, response);
 
@@ -79,13 +80,20 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     }
 
     @Override
-    public boolean isBasedOnSerializers() {
-      return true;
+    public boolean isCustom() {
+      return false;
     }
   }
 
   // TODO: Implement
-  private String acceptNegociation(Set<String> supportedContentTypes) {
+  private String acceptNegociation(HttpServerRequest<ByteBuf> request, Set<String> supportedContentTypes) {
+    String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
+
+    if (accept == null || "".equals(accept)) {
+       return this.serializerManager.getDefaultContentType();
+    }
+
+
     return null;
   }
 
