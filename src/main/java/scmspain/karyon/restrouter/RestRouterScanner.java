@@ -4,6 +4,8 @@ package scmspain.karyon.restrouter;
 import com.google.common.base.Predicates;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import com.netflix.config.ConfigurationManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -40,18 +42,15 @@ import static org.reflections.ReflectionUtils.withAnnotation;
 import static org.reflections.ReflectionUtils.withModifier;
 import static org.reflections.ReflectionUtils.withReturnType;
 
-public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
+public class RestRouterScanner {
 
   public static final String BASE_PACKAGE_PROPERTY = "com.scmspain.karyon.rest.property.packages";
   private final Injector injector;
   private final URIParameterParser parameterParser;
-  private final RestUriRouter<ByteBuf, ByteBuf> restUriRouter = new RestUriRouter<ByteBuf, ByteBuf>();
+  private final RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
   private MethodParameterResolver rmParameterInjector;
   private ResourceLoader resourceLoader;
   private RouteInterceptorSupport routeInterceptorSupport;
-  private ErrorHandler errorHandler;
-  private Serializer serializer;
-  private String defaultContentType;
 
   /**
    * Wrapper class, used like a struct to encapsulate info regarding
@@ -68,16 +67,18 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
       this.klass = method.getDeclaringClass();
       this.uri = uri;
       this.verb = verb;
-    };
+    }
   }
 
   @Inject
-  public RestBasedRouter(Injector inject,
-                         URIParameterParser parameterParser,
-                         MethodParameterResolver rmParameterInjector,
-                         ResourceLoader resourceLoader,
-                         RouteInterceptorSupport routeInterceptorSupport) {
+  public RestRouterScanner(Injector inject,
+                           URIParameterParser parameterParser,
+                           MethodParameterResolver rmParameterInjector,
+                           ResourceLoader resourceLoader,
+                           RouteInterceptorSupport routeInterceptorSupport,
+                           RestUriRouter<ByteBuf, ByteBuf> restUriRouter) {
 
+    this.restUriRouter = restUriRouter;
     this.injector = inject;
     this.parameterParser = parameterParser;
     this.rmParameterInjector = rmParameterInjector;
@@ -108,6 +109,10 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
           });
 
         });
+  }
+
+  public RestUriRouter<ByteBuf, ByteBuf> getRestUriRouter() {
+    return restUriRouter;
   }
 
   private Observable<Object> processRouteHandler(
@@ -143,58 +148,6 @@ public class RestBasedRouter implements RequestHandler<ByteBuf, ByteBuf> {
     } catch (InvocationTargetException e) {
       response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
       throw new RuntimeException("Exception invoking method " + method.toString(), e);
-    }
-  }
-
-
-  @Override
-  public Observable<Void> handle(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
-    Observable<Object> resultObs;
-    List<String> supportedContentTypes = serializer.getSupportedContentTypes();
-    String contentType = defaultContentType;
-
-    Route<ByteBuf, ByteBuf> route =  restUriRouter.findBestMatch(request, response)
-        .orElse(new RouteNotFound<>());
-
-    boolean negociateAccept = route.isBasedOnSerializers();
-
-    try {
-      if (negociateAccept) {
-        contentType = acceptNegociation(supportedContentTypes);
-      }
-      resultObs = route.getHandler().process(request, response);
-
-    } catch (CannotSerializeException|InvalidAcceptHeaderException e) {
-      resultObs = Observable.error(e);
-    }
-
-    resultObs = resultObs.onErrorReturn(throwable ->
-      errorHandler.handleError(throwable, /*canSerializeError = */ negociateAccept)
-    );
-
-    if (negociateAccept) {
-      return serializer.serialize(resultObs, contentType);
-
-    } else {
-      // FIXME: Generic type checking
-      return (Observable)resultObs;
-    }
-  }
-
-  // TODO: Implement
-  private String acceptNegociation(List<String> supportedContentTypes) {
-    return null;
-  }
-
-
-  class RouteNotFound<I,O> extends Route<I,O> {
-    public RouteNotFound() {
-      super((request, context) -> true, new RouteNotFoundHandler<>());
-    }
-
-    @Override
-    public boolean isBasedOnSerializers() {
-      return true;
     }
   }
 

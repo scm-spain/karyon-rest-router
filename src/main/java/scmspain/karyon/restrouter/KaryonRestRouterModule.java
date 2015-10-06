@@ -2,6 +2,7 @@ package scmspain.karyon.restrouter;
 
 import io.netty.buffer.ByteBuf;
 import netflix.karyon.transport.http.KaryonHttpModule;
+import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 import scmspain.karyon.restrouter.transport.http.RouteFilterChain;
 import scmspain.karyon.restrouter.transport.http.RouteInterceptorSupport;
 
@@ -24,7 +25,10 @@ public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, B
 
   @Override
   protected void configure() {
-    bindRouter().to(RestBasedRouter.class);
+    bind(RestUriRouter.class);
+    bind(RestRouterScanner.class);
+
+    bindRouter().to(RestRouterHandler.class);
     bind(RouteInterceptorSupport.class).toInstance(routeInterceptorSupport);
     super.configure();
   }

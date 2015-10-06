@@ -6,5 +6,6 @@ import rx.Observable;
  * Created by pablo.diaz on 6/10/15.
  */
 public interface ErrorHandler {
-  Observable<Object> handleError(Throwable throwable, boolean basedOnSerializers);
+  Observable<Object> handleError(Throwable throwable, boolean basedOnSerializers, StatusCodeSetter statusCode);
+
 }

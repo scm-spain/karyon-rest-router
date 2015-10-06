@@ -2,15 +2,15 @@ package scmspain.karyon.restrouter.transport.http;
 
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
-
-import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.RouteNotFoundException;
 
+import javax.inject.Singleton;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
+@Singleton
 public class RestUriRouter<I, O> {
 
   private final CopyOnWriteArrayList<Route<I,O>> routes;
