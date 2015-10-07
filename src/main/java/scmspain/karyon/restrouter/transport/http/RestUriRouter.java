@@ -36,7 +36,7 @@ public class RestUriRouter<I, O> {
    * @return The updated router.
    */
   public RestUriRouter<I, O> addUriRegex(String uriRegEx, String verb, RouteHandler<I, O> handler) {
-    routes.add(new Route(new EnhancedRegexUriConstraintKey<I>(uriRegEx, verb), handler));
+    routes.add(new Route<I, O>(new EnhancedRegexUriConstraintKey<I>(uriRegEx, verb), handler));
     return this;
   }
 
