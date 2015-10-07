@@ -136,7 +136,7 @@ public class RestRouterHandlerTest {
     responseBody.toBlocking().first();
 
     // Then
-    verify(errorHandler, never()).handleError(any(), anyBoolean(), any());
+    verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -156,7 +156,7 @@ public class RestRouterHandlerTest {
     responseBody.toBlocking().first();
 
     // Then
-    verify(errorHandler, never()).handleError(any(), anyBoolean(), any());
+    verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -177,7 +177,7 @@ public class RestRouterHandlerTest {
     responseBody.toBlocking().first();
 
     // Then
-    verify(errorHandler, never()).handleError(any(), anyBoolean(), any());
+    verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -198,7 +198,7 @@ public class RestRouterHandlerTest {
     responseBody.toBlocking().first();
 
     // Then
-    verify(errorHandler).handleError(isA(InvalidAcceptHeaderException.class), anyBoolean(), any());
+    verify(errorHandler).handleError(isA(InvalidAcceptHeaderException.class), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
   }
@@ -218,7 +218,7 @@ public class RestRouterHandlerTest {
     responseBody.toBlocking().first();
 
     // Then
-    verify(errorHandler, never()).handleError(any(), anyBoolean(), any());
+    verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -239,7 +239,7 @@ public class RestRouterHandlerTest {
     responseBody.toBlocking().first();
 
     // Then
-    verify(errorHandler).handleError(isA(CannotSerializeException.class), anyBoolean(), any());
+    verify(errorHandler).handleError(isA(CannotSerializeException.class), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
   }
@@ -260,7 +260,7 @@ public class RestRouterHandlerTest {
     responseBody.toBlocking().first();
 
     // Then
-    verify(errorHandler, never()).handleError(any(), anyBoolean(), any());
+    verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "text/xml");
@@ -282,7 +282,7 @@ public class RestRouterHandlerTest {
     responseBody.toBlocking().first();
 
     // Then
-    verify(errorHandler, never()).handleError(any(), anyBoolean(), any());
+    verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -305,7 +305,7 @@ public class RestRouterHandlerTest {
     responseBody.toBlocking().first();
 
     // Then
-    verify(errorHandler).handleError(isA(CannotSerializeException.class), anyBoolean(), any());
+    verify(errorHandler).handleError(isA(CannotSerializeException.class), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
   }
 
@@ -325,7 +325,7 @@ public class RestRouterHandlerTest {
     responseBody.toBlocking().first();
 
     // Then
-    verify(errorHandler, never()).handleError(any(), anyBoolean(), any());
+    verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer, never()).serialize(any(), any());
     verify(response.getHeaders(), never()).setHeader(any(), any());
@@ -334,7 +334,7 @@ public class RestRouterHandlerTest {
   @Test
   public void testWhenAcceptIsEmptyAndSupportedAreJsonAndXmlAndTestAndProducesCustomAndHandlerReturnsException() {
     // Given
-    TestSubscriber testSubscriber = new TestSubscriber();
+    TestSubscriber<Void> testSubscriber = new TestSubscriber();
 
     setAccept(null);
     setSupportedContents("application/json");
