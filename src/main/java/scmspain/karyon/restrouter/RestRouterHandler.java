@@ -83,10 +83,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
     SerializeWriter writer = new SerializeWriter(response, contentType);
 
-    return resultObs.map(result -> {
-      serializer.serialize(result, writer);
-      return null;
-    });
+    return resultObs.flatMap(result -> writer.write(result, serializer));
   }
 
 

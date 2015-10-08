@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.reactivex.netty.protocol.http.server.HttpRequestHeaders;
 import io.reactivex.netty.protocol.http.server.HttpResponseHeaders;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
@@ -23,6 +24,7 @@ import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 import scmspain.karyon.restrouter.transport.http.Route;
 import scmspain.karyon.restrouter.transport.http.RouteHandler;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +32,7 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -42,6 +45,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
  * Created by pablo.diaz on 6/10/15.
  */
 public class RestRouterHandlerTest {
+  TestSubscriber<Void> subscriber = new TestSubscriber<>();
+
   @Mock
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
   @Mock
@@ -76,6 +81,9 @@ public class RestRouterHandlerTest {
 
     given(response.getHeaders())
         .willReturn(responseHeaders);
+
+    given(response.getAllocator())
+        .willReturn(new PooledByteBufAllocator());
 
     given(restUriRouter.findBestMatch(request, response))
         .willReturn(Optional.of(route));
@@ -132,9 +140,10 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.toBlocking().first();
+    responseBody.subscribe(subscriber);
 
     // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
     verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
@@ -152,9 +161,10 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.toBlocking().first();
+    responseBody.subscribe(subscriber);
 
     // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
     verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
@@ -173,9 +183,10 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.toBlocking().first();
+    responseBody.subscribe(subscriber);
 
     // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
     verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
@@ -194,9 +205,10 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.toBlocking().first();
+    responseBody.subscribe(subscriber);
 
     // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
     verify(errorHandler).handleError(isA(InvalidAcceptHeaderException.class), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
@@ -214,9 +226,10 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.toBlocking().first();
+    responseBody.subscribe(subscriber);
 
     // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
     verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
@@ -235,9 +248,10 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.toBlocking().first();
+    responseBody.subscribe(subscriber);
 
     // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
     verify(errorHandler).handleError(isA(CannotSerializeException.class), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
@@ -256,9 +270,10 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.toBlocking().first();
+    responseBody.subscribe(subscriber);
 
     // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
     verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
@@ -278,9 +293,10 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.toBlocking().first();
+    responseBody.subscribe(subscriber);
 
     // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
     verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
@@ -301,9 +317,10 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.toBlocking().first();
+    responseBody.subscribe(subscriber);
 
     // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
     verify(errorHandler).handleError(isA(CannotSerializeException.class), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
   }
@@ -321,9 +338,13 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.toBlocking().first();
+    responseBody.subscribe(subscriber);
 
     // Then
+    //  If it's custom the elements in the observable will remain in there as it wouldn't be touch
+    //  TODO: should we throw an exception in those cases?
+    assertThat(subscriber.getOnNextEvents().size(), is(1));
+
     verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer, never()).serialize(any(), any());
@@ -333,8 +354,6 @@ public class RestRouterHandlerTest {
   @Test
   public void testWhenAcceptIsEmptyAndSupportedAreJsonAndXmlAndTestAndProducesCustomAndHandlerReturnsException() {
     // Given
-    TestSubscriber<Void> testSubscriber = new TestSubscriber();
-
     setAccept(null);
     setSupportedContents("application/json");
     setCustomRoute(true);
@@ -348,9 +367,9 @@ public class RestRouterHandlerTest {
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, errorHandler, serializerManager);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
-    responseBody.subscribe(testSubscriber);
+    responseBody.subscribe(subscriber);
 
-    List<Throwable> throwableList = testSubscriber.getOnErrorEvents();
+    List<Throwable> throwableList = subscriber.getOnErrorEvents();
 
     // Then
     verify(routeHandler).process(request, response);

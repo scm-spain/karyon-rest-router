@@ -2,6 +2,7 @@ package scmspain.karyon.restrouter.serializer;
 
 import org.apache.commons.lang.StringUtils;
 
+import java.io.OutputStream;
 import java.util.stream.Stream;
 
 public abstract class Serializer {
@@ -20,5 +21,5 @@ public abstract class Serializer {
     return mediaTypes;
   }
 
-  public abstract void serialize(Object obj, SerializeWriter serializeWriter);
+  public abstract void serialize(Object obj, OutputStream outputStream);
 }

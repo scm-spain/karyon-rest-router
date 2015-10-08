@@ -2,12 +2,12 @@ package scmspain.karyon.restrouter.serializer;
 
 import com.google.common.net.HttpHeaders;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import rx.Observable;
 
-/**
- * Created by pablo.diaz on 6/10/15.
- */
+import java.io.IOException;
+
 public class SerializeWriter {
   private HttpServerResponse<ByteBuf> response;
 
@@ -18,7 +18,17 @@ public class SerializeWriter {
     }
   }
 
-  public Observable<Void> write(byte[] bytes) {
-    return response.writeBytesAndFlush(bytes);
+  // TODO: Should be implemented using an static method?
+  public Observable<Void> write(Object obj, Serializer serializer) {
+    ByteBuf byteBuf = response.getAllocator().ioBuffer();
+
+    try (ByteBufOutputStream outputStream = new ByteBufOutputStream(byteBuf)) {
+      serializer.serialize(obj, outputStream);
+
+    } catch (IOException e) {
+      return Observable.error(e);
+    }
+
+    return response.writeBytesAndFlush(byteBuf);
   }
 }
