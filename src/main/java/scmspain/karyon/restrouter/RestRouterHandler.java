@@ -17,6 +17,7 @@ import scmspain.karyon.restrouter.serializer.SerializeWriter;
 import scmspain.karyon.restrouter.serializer.Serializer;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 import scmspain.karyon.restrouter.transport.http.Route;
+import scmspain.karyon.restrouter.transport.http.RouteNotFound;
 
 import javax.inject.Inject;
 import java.util.Set;
@@ -29,10 +30,9 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
 
   @Inject
-  public RestRouterHandler(
-      RestUriRouter<ByteBuf, ByteBuf> restUriRouter,
-      ErrorHandler errorHandler,
-      SerializeManager serializerManager) {
+  public RestRouterHandler(RestUriRouter<ByteBuf, ByteBuf> restUriRouter,
+                           ErrorHandler errorHandler,
+                           SerializeManager serializerManager) {
 
     this.errorHandler = errorHandler;
     this.serializerManager = serializerManager;
@@ -40,7 +40,8 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   }
 
   @Override
-  public Observable<Void> handle(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
+  public Observable<Void> handle(HttpServerRequest<ByteBuf> request,
+                                 HttpServerResponse<ByteBuf> response) {
 
     Route<ByteBuf, ByteBuf> route =  restUriRouter.findBestMatch(request, response)
         .orElse(new RouteNotFound<>());
@@ -54,7 +55,9 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     }
   }
 
-  public Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route, HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
+  public Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route,
+                                          HttpServerRequest<ByteBuf> request,
+                                          HttpServerResponse<ByteBuf> response) {
 
     Observable<Object> resultObs;
 
@@ -87,7 +90,9 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   }
 
 
-  public Observable<Void> handleCustom(Route<ByteBuf,ByteBuf> route,HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
+  public Observable<Void> handleCustom(Route<ByteBuf,ByteBuf> route,
+                                       HttpServerRequest<ByteBuf> request,
+                                       HttpServerResponse<ByteBuf> response) {
 
     // FIXME: generic type insanity
     return (Observable) route.getHandler().process(request, response);
@@ -103,19 +108,11 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     return supportedContentTypes;
   }
 
-  class RouteNotFound<I,O> extends Route<I,O> {
-    public RouteNotFound() {
-      super((request, context) -> true, new RouteNotFoundHandler<>());
-    }
-
-    @Override
-    public boolean isCustom() {
-      return false;
-    }
-  }
 
   // TODO: Implement
-  private String acceptNegociation(HttpServerRequest<ByteBuf> request, Set<String> supportedContentTypes) {
+  private String acceptNegociation(HttpServerRequest<ByteBuf> request,
+                                   Set<String> supportedContentTypes) {
+
     String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
 
     if (StringUtils.isBlank(accept)) {
@@ -146,7 +143,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
       String serializeContentType = MIMEParse.bestMatch(supportedContentTypes, acceptHeader);
       if (StringUtils.isBlank(serializeContentType)) {
-        throw new CannotSerializeException("Cannot serialize with the given content tpye: " + acceptHeader);
+        throw new CannotSerializeException("Cannot serialize with the given content type: " + acceptHeader);
       }
 
       return serializeContentType;
@@ -171,3 +168,4 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     }
   }
 }
+

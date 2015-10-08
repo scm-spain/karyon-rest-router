@@ -7,6 +7,7 @@ import rx.Observable;
 import scmspain.karyon.restrouter.exception.RouteNotFoundException;
 
 import javax.inject.Singleton;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -35,8 +36,8 @@ public class RestUriRouter<I, O> {
    * @param verb Request verb.
    * @return The updated router.
    */
-  public RestUriRouter<I, O> addUriRegex(String uriRegEx, String verb, RouteHandler<I, O> handler) {
-    routes.add(new Route<I, O>(new EnhancedRegexUriConstraintKey<I>(uriRegEx, verb), handler));
+  public RestUriRouter<I, O> addUriRegex(String uriRegEx, String verb, Collection<String> produces, RouteHandler<I, O> handler) {
+    routes.add(new Route<I, O>(new EnhancedRegexUriConstraintKey<I>(uriRegEx, verb), produces, handler));
     return this;
   }
 

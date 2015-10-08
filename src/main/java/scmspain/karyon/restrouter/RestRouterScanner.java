@@ -10,9 +10,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
+import org.apache.commons.configuration.AbstractConfiguration;
 import rx.Observable;
 import scmspain.karyon.restrouter.annotation.Endpoint;
 import scmspain.karyon.restrouter.annotation.Path;
+import scmspain.karyon.restrouter.annotation.Produces;
 import scmspain.karyon.restrouter.core.MethodParameterResolver;
 import scmspain.karyon.restrouter.core.ResourceLoader;
 import scmspain.karyon.restrouter.core.URIParameterParser;
@@ -24,9 +26,12 @@ import scmspain.karyon.restrouter.transport.http.RouteInterceptorSupport;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.reflections.ReflectionUtils.getAllMethods;
 import static org.reflections.ReflectionUtils.withAnnotation;
@@ -41,8 +46,6 @@ public class RestRouterScanner {
   private final URIParameterParser parameterParser;
   private final RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
   private MethodParameterResolver rmParameterInjector;
-  private ResourceLoader resourceLoader;
-  private RouteInterceptorSupport routeInterceptorSupport;
 
   /**
    * Wrapper class, used like a struct to encapsulate info regarding
@@ -64,20 +67,18 @@ public class RestRouterScanner {
 
   @Inject
   public RestRouterScanner(Injector inject,
+                           AbstractConfiguration configuration,
                            URIParameterParser parameterParser,
                            MethodParameterResolver rmParameterInjector,
                            ResourceLoader resourceLoader,
-                           RouteInterceptorSupport routeInterceptorSupport,
                            RestUriRouter<ByteBuf, ByteBuf> restUriRouter) {
 
     this.restUriRouter = restUriRouter;
     this.injector = inject;
     this.parameterParser = parameterParser;
     this.rmParameterInjector = rmParameterInjector;
-    this.resourceLoader = resourceLoader;
-    this.routeInterceptorSupport = routeInterceptorSupport;
 
-    String basePackage = ConfigurationManager.getConfigInstance().getString(BASE_PACKAGE_PROPERTY);
+    String basePackage = configuration.getString(BASE_PACKAGE_PROPERTY);
     Set<Class<?>> annotatedTypes = resourceLoader.find(basePackage, Endpoint.class);
 
     annotatedTypes.stream()
@@ -93,14 +94,26 @@ public class RestRouterScanner {
         //Double sorting, so we get the precedence right
         .sorted((endpoint1, endpoint2) -> endpoint1.uri.indexOf("{") - endpoint2.uri.indexOf("{"))
         .sorted((endpoint1, endpoint2) -> endpoint1.uri.compareTo(endpoint2.uri))
-        .forEach(endpoint -> {
-          Method method = endpoint.method;
-          String uriRegex = parameterParser.getUriRegex(endpoint.uri);
-          restUriRouter.addUriRegex(uriRegex, endpoint.verb, (request, response) -> {
-            return processRouteHandler(endpoint, method, request, response);
-          });
+        .forEach(this::configureEndpoint);
+  }
 
-        });
+  private void configureEndpoint(EndpointDefinition endpoint) {
+    Method method = endpoint.method;
+
+    // If produces get the list media types, if not it returns an empty list
+    List<String> producesTypes = Stream.of(method.getAnnotations())
+        .filter(a -> a instanceof Produces)
+        .map(Produces.class::cast)
+        .map(Produces::value)
+        .map(Arrays::asList)
+        .findFirst()
+        .orElse(Collections.emptyList());
+
+    String uriRegex = parameterParser.getUriRegex(endpoint.uri);
+
+    restUriRouter.addUriRegex(uriRegex, endpoint.verb, producesTypes, (request, response) ->
+      processRouteHandler(endpoint, method, request, response)
+    );
   }
 
   public RestUriRouter<ByteBuf, ByteBuf> getRestUriRouter() {

@@ -1,9 +1,12 @@
 package scmspain.karyon.restrouter.transport.http;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
 import netflix.karyon.transport.interceptor.InterceptorKey;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,10 +19,11 @@ public class Route<I, O> {
   private boolean custom;
 
   public Route(InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key,
-               RouteHandler<I, O> routeHandler) {
+               Collection<String> produces, RouteHandler<I, O> routeHandler) {
     this.key = key;
     this.routeHandler = routeHandler;
     this.custom = true;
+    this.produces = ImmutableSet.copyOf(produces);
   }
 
   public InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> getKey() {
