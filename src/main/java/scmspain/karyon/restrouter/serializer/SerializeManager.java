@@ -1,19 +1,12 @@
 package scmspain.karyon.restrouter.serializer;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.net.MediaType;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 
-import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class SerializeManager {
   private Map<String, Serializer> serializers;
