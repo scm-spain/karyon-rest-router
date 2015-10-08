@@ -19,10 +19,10 @@ public class Route<I, O> {
   private boolean custom;
 
   public Route(InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key,
-               Collection<String> produces, RouteHandler<I, O> routeHandler) {
+               Collection<String> produces, boolean custom, RouteHandler<I, O> routeHandler) {
     this.key = key;
     this.routeHandler = routeHandler;
-    this.custom = true;
+    this.custom = custom;
     this.produces = ImmutableSet.copyOf(produces);
   }
 

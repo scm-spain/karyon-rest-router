@@ -60,11 +60,11 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(WithoutPathsAndMethods.class));
 
     // When
-    new RestRouterScanner(injector, configuration, parameterParser,
+    new RestRouterScanner(injector, parameterParser,
                 rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter, never()).addUriRegex(any(), any(), any(), any());
+    verify(restUriRouter, never()).addUriRegex(any(), any(), any(), eq(true), any());
   }
 
   @Test
@@ -74,11 +74,11 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(WithoutPaths.class));
 
     // When
-    new RestRouterScanner(injector, configuration, parameterParser,
+    new RestRouterScanner(injector, parameterParser,
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter, never()).addUriRegex(any(), any(), any(), any());
+    verify(restUriRouter, never()).addUriRegex(any(), any(), any(), eq(true), any());
   }
 
   @Test
@@ -88,11 +88,11 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(With2Paths.class));
 
     // When
-    new RestRouterScanner(injector, configuration, parameterParser,
+    new RestRouterScanner(injector, parameterParser,
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter, times(2)).addUriRegex(any(), any(), any(), any());
+    verify(restUriRouter, times(2)).addUriRegex(any(), any(), any(), eq(true), any());
   }
 
   @Test
@@ -102,11 +102,11 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(WithoutProduces.class));
 
     // When
-    new RestRouterScanner(injector, configuration, parameterParser,
+    new RestRouterScanner(injector, parameterParser,
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter).addUriRegex(any(), any(), eq(Collections.emptyList()), any());
+    verify(restUriRouter).addUriRegex(any(), any(), eq(Collections.emptyList()), eq(true), any());
   }
 
   @Test
@@ -116,19 +116,63 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(With1ProducesTextPlain.class));
 
     // When
-    new RestRouterScanner(injector, configuration, parameterParser,
+    new RestRouterScanner(injector, parameterParser,
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter).addUriRegex(any(), any(), producesCaptor.capture(), any());
+    verify(restUriRouter).addUriRegex(any(), any(), producesCaptor.capture(), eq(true), any());
 
     Collection<String> col = producesCaptor.getValue();
     assertThat(col, contains("text/plain"));
   }
 
+  @Test
+  public void givenADefaultAnnotatedEndpointShouldBeCustom() {
+    // Given
+    given(resourceLoader.find(any(), eq(Endpoint.class)))
+        .willReturn(Sets.newHashSet(DefaultEndpoint.class));
+
+    // When
+    new RestRouterScanner(injector, parameterParser,
+        rmParameterInjector, resourceLoader, restUriRouter);
+
+    // Then
+    verify(restUriRouter).addUriRegex(any(), any(), any(), eq(true), any());
+  }
+
+  @Test
+  public void givenASerializableEndpointShouldBeNotBeCustom() {
+    // Given
+    given(resourceLoader.find(any(), eq(Endpoint.class)))
+        .willReturn(Sets.newHashSet(EndpointWithSerialization.class));
+
+    // When
+    new RestRouterScanner(injector, parameterParser,
+        rmParameterInjector, resourceLoader, restUriRouter);
+
+    // Then
+    verify(restUriRouter).addUriRegex(any(), any(), any(), eq(false), any());
+  }
+
   @Endpoint
   static class WithoutPathsAndMethods {
 
+  }
+
+  @Endpoint
+  static class DefaultEndpoint {
+    @Path(value = "/path", method = "GET")
+    public Observable<Void> path() {
+      return null;
+    }
+  }
+
+  @Endpoint(customSerialization = false)
+  static class EndpointWithSerialization {
+    @Path(value = "/path", method = "GET")
+    public Observable<Void> path() {
+      return null;
+    }
   }
 
   @Endpoint

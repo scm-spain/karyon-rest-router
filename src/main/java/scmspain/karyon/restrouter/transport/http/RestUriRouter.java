@@ -3,6 +3,7 @@ package scmspain.karyon.restrouter.transport.http;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
+import netflix.karyon.transport.interceptor.InterceptorKey;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.RouteNotFoundException;
 
@@ -36,8 +37,12 @@ public class RestUriRouter<I, O> {
    * @param verb Request verb.
    * @return The updated router.
    */
-  public RestUriRouter<I, O> addUriRegex(String uriRegEx, String verb, Collection<String> produces, RouteHandler<I, O> handler) {
-    routes.add(new Route<I, O>(new EnhancedRegexUriConstraintKey<I>(uriRegEx, verb), produces, handler));
+  public RestUriRouter<I, O> addUriRegex(String uriRegEx, String verb, Collection<String> produces,
+                                         boolean custom, RouteHandler<I, O> handler) {
+    EnhancedRegexUriConstraintKey<I> interceptorKey =
+        new EnhancedRegexUriConstraintKey<>(uriRegEx, verb);
+
+    routes.add(new Route<I, O>(interceptorKey, produces, custom, handler));
     return this;
   }
 

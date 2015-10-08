@@ -21,7 +21,6 @@ import scmspain.karyon.restrouter.core.URIParameterParser;
 import scmspain.karyon.restrouter.exception.ParamAnnotationException;
 import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
-import scmspain.karyon.restrouter.transport.http.RouteInterceptorSupport;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -67,7 +66,6 @@ public class RestRouterScanner {
 
   @Inject
   public RestRouterScanner(Injector inject,
-                           AbstractConfiguration configuration,
                            URIParameterParser parameterParser,
                            MethodParameterResolver rmParameterInjector,
                            ResourceLoader resourceLoader,
@@ -78,11 +76,11 @@ public class RestRouterScanner {
     this.parameterParser = parameterParser;
     this.rmParameterInjector = rmParameterInjector;
 
-    String basePackage = configuration.getString(BASE_PACKAGE_PROPERTY);
+    String basePackage = ConfigurationManager.getConfigInstance().getString(BASE_PACKAGE_PROPERTY);
     Set<Class<?>> annotatedTypes = resourceLoader.find(basePackage, Endpoint.class);
 
     annotatedTypes.stream()
-        .flatMap(klass->
+        .flatMap(klass ->
             getAllMethods(klass,
                 Predicates.and(withModifier(Modifier.PUBLIC), withAnnotation(Path.class)),
                 withReturnType(Observable.class)
@@ -100,6 +98,8 @@ public class RestRouterScanner {
   private void configureEndpoint(EndpointDefinition endpoint) {
     Method method = endpoint.method;
 
+    Endpoint endPoint = endpoint.klass.getAnnotation(Endpoint.class);
+
     // If produces get the list media types, if not it returns an empty list
     List<String> producesTypes = Stream.of(method.getAnnotations())
         .filter(a -> a instanceof Produces)
@@ -111,8 +111,9 @@ public class RestRouterScanner {
 
     String uriRegex = parameterParser.getUriRegex(endpoint.uri);
 
-    restUriRouter.addUriRegex(uriRegex, endpoint.verb, producesTypes, (request, response) ->
-      processRouteHandler(endpoint, method, request, response)
+    restUriRouter.addUriRegex(uriRegex, endpoint.verb,
+        producesTypes, endPoint.customSerialization(),
+        (request, response) -> processRouteHandler(endpoint, method, request, response)
     );
   }
 
