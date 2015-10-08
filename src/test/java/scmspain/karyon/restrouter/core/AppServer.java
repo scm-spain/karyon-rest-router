@@ -25,7 +25,9 @@ public interface AppServer {
           .port(DEFAULT_PORT)
           .threadPoolSize(DEFAULT_THREADS_POOL_SIZE);
 
-      this.addRouteInterceptor(new TestJsonRouteFilterChain());
+      this.setDefaultContentType("application/json");
+      this.addSerializers(new JsonSerializer());
+      //this.addRouteInterceptor(new TestJsonRouteFilterChain());
     }
 
     @Override

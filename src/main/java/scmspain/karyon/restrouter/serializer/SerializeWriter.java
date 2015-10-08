@@ -13,8 +13,9 @@ public class SerializeWriter {
 
   public SerializeWriter(HttpServerResponse<ByteBuf> response, String contentType) {
     this.response = response;
-
-    response.getHeaders().setHeader(HttpHeaders.CONTENT_TYPE, contentType);
+    if (contentType != null) {
+      response.getHeaders().setHeader(HttpHeaders.CONTENT_TYPE, contentType);
+    }
   }
 
   public Observable<Void> write(byte[] bytes) {

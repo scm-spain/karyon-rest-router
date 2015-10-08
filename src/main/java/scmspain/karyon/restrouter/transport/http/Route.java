@@ -19,6 +19,7 @@ public class Route<I, O> {
                RouteHandler<I, O> routeHandler) {
     this.key = key;
     this.routeHandler = routeHandler;
+    this.custom = true;
   }
 
   public InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> getKey() {

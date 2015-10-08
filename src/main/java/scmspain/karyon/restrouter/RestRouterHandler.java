@@ -29,7 +29,11 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
 
   @Inject
-  public RestRouterHandler(RestUriRouter<ByteBuf, ByteBuf> restUriRouter, ErrorHandler errorHandler, SerializeManager serializerManager) {
+  public RestRouterHandler(
+      RestUriRouter<ByteBuf, ByteBuf> restUriRouter,
+      ErrorHandler errorHandler,
+      SerializeManager serializerManager) {
+
     this.errorHandler = errorHandler;
     this.serializerManager = serializerManager;
     this.restUriRouter = restUriRouter;

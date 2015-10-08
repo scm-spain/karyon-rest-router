@@ -4,29 +4,21 @@ package scmspain.karyon.restrouter;
 import com.google.common.base.Predicates;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.config.ConfigurationManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
-import io.reactivex.netty.protocol.http.server.RequestHandler;
 import rx.Observable;
 import scmspain.karyon.restrouter.annotation.Endpoint;
 import scmspain.karyon.restrouter.annotation.Path;
 import scmspain.karyon.restrouter.core.MethodParameterResolver;
 import scmspain.karyon.restrouter.core.ResourceLoader;
 import scmspain.karyon.restrouter.core.URIParameterParser;
-import scmspain.karyon.restrouter.exception.CannotSerializeException;
-import scmspain.karyon.restrouter.exception.RouteNotFoundException;
-import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
 import scmspain.karyon.restrouter.exception.ParamAnnotationException;
 import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
-import scmspain.karyon.restrouter.handlers.ErrorHandler;
-import scmspain.karyon.restrouter.serializer.Serializer;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
-import scmspain.karyon.restrouter.transport.http.Route;
 import scmspain.karyon.restrouter.transport.http.RouteInterceptorSupport;
 
 import java.lang.reflect.InvocationTargetException;
@@ -34,7 +26,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.reflections.ReflectionUtils.getAllMethods;
@@ -42,6 +33,7 @@ import static org.reflections.ReflectionUtils.withAnnotation;
 import static org.reflections.ReflectionUtils.withModifier;
 import static org.reflections.ReflectionUtils.withReturnType;
 
+@Singleton
 public class RestRouterScanner {
 
   public static final String BASE_PACKAGE_PROPERTY = "com.scmspain.karyon.rest.property.packages";
