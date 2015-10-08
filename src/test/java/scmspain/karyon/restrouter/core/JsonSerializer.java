@@ -1,8 +1,7 @@
 package scmspain.karyon.restrouter.core;
 
-import com.google.common.net.MediaType;
 import org.codehaus.jackson.map.ObjectMapper;
-import scmspain.karyon.restrouter.serializer.MediaTypeSerializer;
+import scmspain.karyon.restrouter.serializer.Serializer;
 import scmspain.karyon.restrouter.serializer.SerializeWriter;
 
 import java.io.IOException;
@@ -11,11 +10,9 @@ import java.util.stream.Stream;
 /**
  * Created by borja.vazquez on 8/10/15.
  */
-public class JsonSerializer extends MediaTypeSerializer {
+public class JsonSerializer extends Serializer {
   public JsonSerializer() {
-    super(
-        Stream.of("application/json").toArray(String[]::new),
-        Stream.of("application/json").toArray(String[]::new));
+    super(Stream.of("application/json").toArray(String[]::new));
   }
 
   @Override

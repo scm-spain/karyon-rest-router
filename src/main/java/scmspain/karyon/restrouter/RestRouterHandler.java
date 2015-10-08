@@ -92,6 +92,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
   public Observable<Void> handleCustom(Route<ByteBuf,ByteBuf> route,HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
 
+    // FIXME: generic type insanity
     return (Observable) route.getHandler().process(request, response);
   }
 
@@ -128,8 +129,10 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
       switch (supportedContentTypes.size()) {
         case 0:
           throw new CannotSerializeException("Cannot determine the content-type to serialize");
+
         case 1:
           return supportedContentTypes.stream().findFirst().get();
+
         default:
           throw new CannotSerializeException("Cannot determine the content-type to serialize between: " + supportedContentTypes);
       }

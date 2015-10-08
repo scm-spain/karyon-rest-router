@@ -2,59 +2,49 @@ package scmspain.karyon.restrouter.serializer;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
-import com.google.inject.Singleton;
+import scmspain.karyon.restrouter.exception.CannotSerializeException;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/*
-Add tests to all library. Remember the accept header can have multiple types
-Remove jackson, as this is just an API to have more formats
-Create a nice builder to use this interceptor
-Commit
-Create modules of this project foreach format it allow, currently it should support all formats
-*/
 public class SerializeManager {
-  private List<MediaTypeSerializer> serializers;
+  private List<Serializer> serializers;
 
-  private String defaultContentTypeStr;
-  private MediaType defaultContentType;
+  private String defaultContentType;
   private Set<String> supportedMediaTypes = new HashSet<>();
 
   public void setDefaultContentType(String defaultContentType) {
-    this.defaultContentTypeStr = defaultContentType;
-    this.defaultContentType = MediaType.parse(defaultContentType);
+    this.defaultContentType = defaultContentType;
   }
 
-  public void setSerializers(MediaTypeSerializer... serializers) {
+  public void setSerializers(Serializer... serializers) {
     setSerializers(Arrays.asList(serializers));
   }
 
-  public void setSerializers(List<MediaTypeSerializer> serializers) {
+  public void setSerializers(List<Serializer> serializers) {
     this.serializers = ImmutableList.copyOf(serializers);
 
     this.supportedMediaTypes = serializers.stream()
-        .map(MediaTypeSerializer::getMediaTypesStr)
+        .map(Serializer::getMediaTypes)
         .flatMap(Arrays::stream)
         .collect(Collectors.toSet());
   }
-
-
 
   public Set<String> getSupportedMediaTypes() {
     return supportedMediaTypes;
   }
 
   public String getDefaultContentType() {
-    return defaultContentTypeStr;
+    return defaultContentType;
   }
 
   public Serializer getSerializer(String contentType) {
-    return null;
+    return serializers.stream()
+        .filter(serializer -> serializer.canHandle(contentType))
+        .findFirst().orElseThrow(() -> new CannotSerializeException("Cannot serialize " + contentType));
   }
 
 }

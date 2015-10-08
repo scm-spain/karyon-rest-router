@@ -4,6 +4,7 @@ import com.google.inject.Singleton;
 import com.netflix.governator.annotations.Modules;
 import netflix.karyon.KaryonBootstrap;
 import netflix.karyon.archaius.ArchaiusBootstrap;
+import rx.Observable;
 import scmspain.karyon.restrouter.KaryonRestRouterModule;
 import scmspain.karyon.restrouter.endpoint.ExampleEndpointController;
 
@@ -20,7 +21,6 @@ public interface AppServer {
 
     @Override
     protected void configureServer() {
-
       server()
           .port(DEFAULT_PORT)
           .threadPoolSize(DEFAULT_THREADS_POOL_SIZE);

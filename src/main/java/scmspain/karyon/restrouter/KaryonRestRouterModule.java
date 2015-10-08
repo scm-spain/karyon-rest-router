@@ -4,10 +4,9 @@ import io.netty.buffer.ByteBuf;
 import netflix.karyon.transport.http.KaryonHttpModule;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
 import scmspain.karyon.restrouter.handlers.ErrorHandlerImpl;
-import scmspain.karyon.restrouter.serializer.MediaTypeSerializer;
+import scmspain.karyon.restrouter.serializer.Serializer;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
-import scmspain.karyon.restrouter.transport.http.RouteFilterChain;
 import scmspain.karyon.restrouter.transport.http.RouteInterceptorSupport;
 
 public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, ByteBuf> {
@@ -23,15 +22,13 @@ public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, B
     super(moduleName, ByteBuf.class, ByteBuf.class);
   }
 
-
   public void setDefaultContentType(String defaultContentType){
     this.serializeManager.setDefaultContentType(defaultContentType);
   }
 
-  public void addSerializers(MediaTypeSerializer... serializers) {
-    serializeManager.setSerializers(serializers);
+  public void addSerializers(Serializer... serializers) {
+    this.serializeManager.setSerializers(serializers);
   }
-
 
   @Override
   protected void configure() {
@@ -39,9 +36,9 @@ public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, B
     bind(ErrorHandler.class).to(ErrorHandlerImpl.class);
     bind(SerializeManager.class).toInstance(serializeManager);
     bind(RestRouterScanner.class);
+    bind(RouteInterceptorSupport.class).toInstance(routeInterceptorSupport);
 
     bindRouter().to(RestRouterHandler.class);
-    bind(RouteInterceptorSupport.class).toInstance(routeInterceptorSupport);
     super.configure();
   }
 
