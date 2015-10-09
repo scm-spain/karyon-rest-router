@@ -18,7 +18,6 @@ public class SerializeWriter {
     }
   }
 
-  // TODO: Should be implemented using an static method?
   public Observable<Void> write(Object obj, Serializer serializer) {
     ByteBuf byteBuf = response.getAllocator().ioBuffer();
 

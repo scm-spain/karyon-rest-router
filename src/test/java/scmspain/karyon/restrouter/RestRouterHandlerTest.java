@@ -133,6 +133,7 @@ public class RestRouterHandlerTest {
   }
 
 
+  // 3
   @Test
   public void testWhenAcceptIsEmptyThenShouldReturnDefaultContentType() {
     // Given
@@ -153,6 +154,7 @@ public class RestRouterHandlerTest {
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
   }
 
+  // 5
   @Test
   public void testWhenAcceptIsJsonAndSupportedIsJsonAndProducesIsEmptyThenShouldReturnJson() {
     // Given
@@ -174,10 +176,10 @@ public class RestRouterHandlerTest {
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
   }
 
+  // 7
   @Test
   public void testWhenAcceptIsEmptySupportedIsJsonAndProducesIsJsonThenShouldReturnJson() {
     // Given
-    setAccept("application/json");
     setSupportedContents("application/json");
     setProduces("application/json");
     setCustomRoute(false);
@@ -196,12 +198,12 @@ public class RestRouterHandlerTest {
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
   }
 
+  // 8
   @Test
   public void testWhenAcceptIsNotValidAndSupportedIsJsonThenShouldReturnDefaultContentType() {
     // Given
     setAccept("invalid_accept");
     setSupportedContents("application/json");
-    setProduces("application/json");
     setCustomRoute(false);
 
     // When
@@ -217,6 +219,7 @@ public class RestRouterHandlerTest {
 
   }
 
+  // 9
   @Test
   public void testWhenAcceptIsJsonAndSupportedIsJsonAndProducesIsJsonThenShouldReturnJson() {
     // Given
@@ -240,6 +243,7 @@ public class RestRouterHandlerTest {
 
   }
 
+  // 11
   @Test
   public void testWhenAcceptIsXmlAndSupportedIsJsonThenShouldReturnCannotSerializedInJson() {
     // Given
@@ -260,6 +264,7 @@ public class RestRouterHandlerTest {
 
   }
 
+  // 14
   @Test
   public void testWhenAcceptIsEmptyAndSupportedAreJsonAndXmlAndProducesXmlThenReturnXml() {
     // Given
@@ -283,6 +288,7 @@ public class RestRouterHandlerTest {
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "text/xml");
   }
 
+  // 15
   @Test
   public void testWhenAcceptIsEmptyAndSupportedAreJsonAndXmlAndProducesAreXmlAndJsonThenShouldReturnDefault() {
     // Given
@@ -306,7 +312,7 @@ public class RestRouterHandlerTest {
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
   }
 
-
+  // 16
   @Test
   public void testWhenAcceptIsEmptyAndSupportedAreJsonAndXmlAndTestAndProducesAreXmlAndTextThenShouldReturnCannotSerialize() {
     // Given
@@ -328,6 +334,7 @@ public class RestRouterHandlerTest {
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
   }
 
+  // 17
   @Test
   public void testWhenAcceptIsEmptyAndSupportedAreJsonAndXmlAndTestAndProducesCustomThenShouldReturnCannotSerialize() {
     // Given

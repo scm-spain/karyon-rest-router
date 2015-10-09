@@ -43,6 +43,7 @@ public class RestUriRouter<I, O> {
         new EnhancedRegexUriConstraintKey<>(uriRegEx, verb);
 
     routes.add(new Route<I, O>(interceptorKey, produces, custom, handler));
+
     return this;
   }
 

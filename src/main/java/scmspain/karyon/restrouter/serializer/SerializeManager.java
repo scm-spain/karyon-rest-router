@@ -1,20 +1,19 @@
 package scmspain.karyon.restrouter.serializer;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.net.MediaType;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class SerializeManager {
-  private List<Serializer> serializers;
+
+  private Map<String, Serializer> serializers;
   private String defaultContentType;
-  private Set<String> supportedMediaTypes = new HashSet<>();
+
   private ErrorHandler errorHandler;
 
 
@@ -27,12 +26,16 @@ public class SerializeManager {
   }
 
   public void setSerializers(List<Serializer> serializers) {
-    this.serializers = ImmutableList.copyOf(serializers);
+    this.serializers = new HashMap<>();
+    for (Serializer serializer: serializers) {
+      for (String mediaType: serializer.getMediaTypes()) {
+        this.serializers.put(mediaType, serializer);
+      }
+    }
+  }
 
-    this.supportedMediaTypes = serializers.stream()
-        .map(Serializer::getMediaTypes)
-        .flatMap(Arrays::stream)
-        .collect(Collectors.toSet());
+  public void setErrorHandler(ErrorHandler errorHandler) {
+    this.errorHandler = errorHandler;
   }
 
   public ErrorHandler getErrorHandler() {
@@ -40,7 +43,7 @@ public class SerializeManager {
   }
 
   public Set<String> getSupportedMediaTypes() {
-    return supportedMediaTypes;
+    return serializers.keySet();
   }
 
   public String getDefaultContentType() {
@@ -48,9 +51,13 @@ public class SerializeManager {
   }
 
   public Serializer getSerializer(String contentType) {
-    return serializers.stream()
-        .filter(serializer -> serializer.canHandle(contentType))
-        .findFirst().orElseThrow(() -> new CannotSerializeException("Cannot serialize " + contentType));
+    Serializer serializer = serializers.get(contentType);
+
+    if(serializer == null) {
+      throw new CannotSerializeException("Cannot serialize " + contentType);
+    }
+
+    return serializer;
   }
 
 }
