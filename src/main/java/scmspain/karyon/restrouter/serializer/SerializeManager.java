@@ -3,6 +3,7 @@ package scmspain.karyon.restrouter.serializer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
+import scmspain.karyon.restrouter.handlers.ErrorHandler;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -12,9 +13,10 @@ import java.util.stream.Collectors;
 
 public class SerializeManager {
   private List<Serializer> serializers;
-
   private String defaultContentType;
   private Set<String> supportedMediaTypes = new HashSet<>();
+  private ErrorHandler errorHandler;
+
 
   public void setDefaultContentType(String defaultContentType) {
     this.defaultContentType = defaultContentType;
@@ -31,6 +33,10 @@ public class SerializeManager {
         .map(Serializer::getMediaTypes)
         .flatMap(Arrays::stream)
         .collect(Collectors.toSet());
+  }
+
+  public ErrorHandler getErrorHandler() {
+    return errorHandler;
   }
 
   public Set<String> getSupportedMediaTypes() {

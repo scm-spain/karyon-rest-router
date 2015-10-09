@@ -25,16 +25,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
-  private ErrorHandler errorHandler;
   private SerializeManager serializerManager;
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
 
   @Inject
   public RestRouterHandler(RestUriRouter<ByteBuf, ByteBuf> restUriRouter,
-                           ErrorHandler errorHandler,
                            SerializeManager serializerManager) {
 
-    this.errorHandler = errorHandler;
     this.serializerManager = serializerManager;
     this.restUriRouter = restUriRouter;
   }
@@ -76,7 +73,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     }
 
     resultObs = resultObs.onErrorReturn(throwable ->
-            errorHandler.handleError(throwable,
+            serializerManager.getErrorHandler().handleError(throwable,
                 response::setStatus
             )
     );

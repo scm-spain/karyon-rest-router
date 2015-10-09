@@ -7,6 +7,7 @@ import netflix.karyon.archaius.ArchaiusBootstrap;
 import rx.Observable;
 import scmspain.karyon.restrouter.KaryonRestRouterModule;
 import scmspain.karyon.restrouter.endpoint.ExampleEndpointController;
+import scmspain.karyon.restrouter.serializer.Configuration;
 
 @ArchaiusBootstrap
 @KaryonBootstrap(name = "AppServer")
@@ -25,8 +26,13 @@ public interface AppServer {
           .port(DEFAULT_PORT)
           .threadPoolSize(DEFAULT_THREADS_POOL_SIZE);
 
-      this.setDefaultContentType("application/json");
-      this.addSerializers(new JsonSerializer());
+
+      this.setConfiguration(Configuration.builder()
+          .defaultContentType("application/json")
+          .addSerializer(new JsonSerializer())
+          .errorHandler((throwable, statusCode) -> Observable.empty())
+          .build()
+      );
       //this.addRouteInterceptor(new TestJsonRouteFilterChain());
     }
 
