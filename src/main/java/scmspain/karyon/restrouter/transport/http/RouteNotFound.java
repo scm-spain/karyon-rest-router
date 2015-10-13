@@ -9,7 +9,7 @@ import java.util.Collections;
  */
 public class RouteNotFound<I,O> extends Route<I,O> {
   public RouteNotFound() {
-    super((request, context) -> true, Collections.emptyList(), false, new RouteNotFoundHandler<>());
+    super("not_found", (request, context) -> true, Collections.emptyList(), false, new RouteNotFoundHandler<>());
   }
 
 }

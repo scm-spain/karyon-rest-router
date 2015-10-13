@@ -14,7 +14,7 @@ import scmspain.karyon.restrouter.annotation.QueryParam;
 import scmspain.karyon.restrouter.endpoint.dto.ExampleDTO;
 
 @Singleton
-@Endpoint()
+@Endpoint
 public class ExampleEndpointController {
 
   public ExampleEndpointController() {

@@ -52,33 +52,20 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     } else {
       result = handleSupported(route, request, response);
     }
-//
-//    return result.onErrorResumeNext(throwable -> {
-//      if(throwable instanceof RouteNotFoundException) {
-//        response.setStatus(HttpResponseStatus.NOT_FOUND);
-//
-//        return response.writeStringAndFlush("404");
-//      }else {
-//        return Observable.error(throwable);
-//      }
-//    });
+
     return result;
   }
 
   public Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route,
                                           HttpServerRequest<ByteBuf> request,
                                           HttpServerResponse<ByteBuf> response) {
-
     Observable<Object> resultObs;
-
     String contentType = serializerManager.getDefaultContentType();
-
 
     Set<String> supportedContentTypes = getSupportedContentTypes(route);
 
     try {
       contentType = acceptNegociation(request, supportedContentTypes);
-
       resultObs = route.getHandler().process(request, response);
 
     } catch (CannotSerializeException |InvalidAcceptHeaderException e) {
@@ -108,9 +95,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
       }
     });
 
-
     Serializer serializer = serializerManager.getSerializer(contentType);
-
     SerializeWriter writer = new SerializeWriter(response, contentType);
 
     return resultObs.flatMap(result -> writer.write(result, serializer));

@@ -17,9 +17,11 @@ public class Route<I, O> {
   private final RouteHandler<I, O> routeHandler;
   private Set<String> produces = new HashSet<>();
   private boolean custom;
+  private String name;
 
-  public Route(InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key,
+  public Route(String name, InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key,
                Collection<String> produces, boolean custom, RouteHandler<I, O> routeHandler) {
+    this.name = name;
     this.key = key;
     this.routeHandler = routeHandler;
     this.custom = custom;
@@ -40,5 +42,9 @@ public class Route<I, O> {
 
   public boolean isCustom() {
     return custom;
+  }
+
+  public String getName() {
+    return name;
   }
 }

@@ -65,7 +65,7 @@ public class RestRouterScannerTest {
                 rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter, never()).addUriRegex(any(), any(), any(), eq(true), any());
+    verify(restUriRouter, never()).addUriRegex(any(), any(), any(), any(), eq(true), any());
   }
 
   @Test
@@ -79,7 +79,7 @@ public class RestRouterScannerTest {
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter, never()).addUriRegex(any(), any(), any(), eq(true), any());
+    verify(restUriRouter, never()).addUriRegex(any(), any(), any(), any(), eq(true), any());
   }
 
   @Test
@@ -93,7 +93,7 @@ public class RestRouterScannerTest {
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter, times(2)).addUriRegex(any(), any(), any(), eq(true), any());
+    verify(restUriRouter, times(2)).addUriRegex(any(), any(), any(), any(), eq(true), any());
   }
 
   @Test
@@ -107,7 +107,7 @@ public class RestRouterScannerTest {
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter).addUriRegex(any(), any(), eq(Collections.emptyList()), eq(true), any());
+    verify(restUriRouter).addUriRegex(any(), any(), any(), eq(Collections.emptyList()), eq(true), any());
   }
 
   @Test
@@ -121,7 +121,7 @@ public class RestRouterScannerTest {
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter).addUriRegex(any(), any(), producesCaptor.capture(), eq(true), any());
+    verify(restUriRouter).addUriRegex(any(), any(), any(), producesCaptor.capture(), eq(true), any());
 
     Collection<String> col = producesCaptor.getValue();
     assertThat(col, contains("text/plain"));
@@ -138,7 +138,7 @@ public class RestRouterScannerTest {
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter).addUriRegex(any(), any(), any(), eq(true), any());
+    verify(restUriRouter).addUriRegex(any(), any(), any(), any(), eq(true), any());
   }
 
   @Test
@@ -152,7 +152,7 @@ public class RestRouterScannerTest {
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter).addUriRegex(any(), any(), any(), eq(false), any());
+    verify(restUriRouter).addUriRegex(any(), any(), any(), any(), eq(false), any());
   }
 
   /*
@@ -179,7 +179,7 @@ public class RestRouterScannerTest {
         rmParameterInjector, resourceLoader, restUriRouter);
 
     // Then
-    verify(restUriRouter).addUriRegex(any(), any(), any(), eq(true), any());
+    verify(restUriRouter).addUriRegex(any(), any(), any(), any(), eq(true), any());
   }
 
 

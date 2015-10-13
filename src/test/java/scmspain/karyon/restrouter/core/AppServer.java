@@ -9,6 +9,8 @@ import rx.Observable;
 import scmspain.karyon.restrouter.KaryonRestRouterModule;
 import scmspain.karyon.restrouter.endpoint.ExampleEndpointController;
 import scmspain.karyon.restrouter.exception.RouteNotFoundException;
+import scmspain.karyon.restrouter.handlers.ErrorHandler;
+import scmspain.karyon.restrouter.handlers.StatusCodeSetter;
 import scmspain.karyon.restrouter.serializer.Configuration;
 
 @ArchaiusBootstrap
@@ -30,9 +32,9 @@ public interface AppServer {
 
 
       this.setConfiguration(Configuration.builder()
-          .defaultContentType("application/json")
-          .addSerializer(new JsonSerializer())
-          .build()
+              .defaultContentType("application/json")
+              .addSerializer(new JsonSerializer())
+              .build()
       );
 
     }

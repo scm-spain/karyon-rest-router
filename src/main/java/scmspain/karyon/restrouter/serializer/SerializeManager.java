@@ -3,6 +3,7 @@ package scmspain.karyon.restrouter.serializer;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
 
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -21,11 +22,11 @@ public class SerializeManager {
     this.defaultContentType = configuration.getDefaultContentType();
     this.errorHandler = configuration.getErrorHandler();
 
-    validate();
   }
 
+  @Inject
   private void validate() {
-
+    // err4: No hay serializacion para el default content type
   }
 
 
