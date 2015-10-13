@@ -12,6 +12,7 @@ import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import org.apache.commons.configuration.AbstractConfiguration;
 import rx.Observable;
+import scmspain.karyon.restrouter.annotation.CustomSerialization;
 import scmspain.karyon.restrouter.annotation.Endpoint;
 import scmspain.karyon.restrouter.annotation.Path;
 import scmspain.karyon.restrouter.annotation.Produces;
@@ -55,12 +56,14 @@ public class RestRouterScanner {
     String verb;
     Method method;
     Class<?> klass;
+    CustomSerialization customSerialization;
 
-    EndpointDefinition(Method method, String uri, String verb) {
+    EndpointDefinition(Method method, String uri, String verb, CustomSerialization customSerialization) {
       this.method = method;
       this.klass = method.getDeclaringClass();
       this.uri = uri;
       this.verb = verb;
+      this.customSerialization = customSerialization;
     }
   }
 
@@ -87,7 +90,7 @@ public class RestRouterScanner {
             ).stream())
         .map(method -> {
           Path path = method.getAnnotation(Path.class);
-          return new EndpointDefinition(method, path.value(), path.method());
+          return new EndpointDefinition(method, path.value(), path.method(), path.customSerialization());
         })
         //Double sorting, so we get the precedence right
         .sorted((endpoint1, endpoint2) -> endpoint1.uri.indexOf("{") - endpoint2.uri.indexOf("{"))
@@ -95,10 +98,10 @@ public class RestRouterScanner {
         .forEach(this::configureEndpoint);
   }
 
-  private void configureEndpoint(EndpointDefinition endpoint) {
-    Method method = endpoint.method;
+  private void configureEndpoint(EndpointDefinition pathDefinition) {
+    Method method = pathDefinition.method;
 
-    Endpoint endPoint = endpoint.klass.getAnnotation(Endpoint.class);
+    Endpoint endpoint = pathDefinition.klass.getAnnotation(Endpoint.class);
 
     // If produces get the list media types, if not it returns an empty list
     List<String> producesTypes = Stream.of(method.getAnnotations())
@@ -109,12 +112,27 @@ public class RestRouterScanner {
         .findFirst()
         .orElse(Collections.emptyList());
 
-    String uriRegex = parameterParser.getUriRegex(endpoint.uri);
+    String uriRegex = parameterParser.getUriRegex(pathDefinition.uri);
 
-    restUriRouter.addUriRegex(uriRegex, endpoint.verb,
-        producesTypes, endPoint.customSerialization(),
-        (request, response) -> processRouteHandler(endpoint, method, request, response)
+    boolean customSerialization = getCustomSerialization(endpoint.customSerialization(), pathDefinition.customSerialization);
+
+    restUriRouter.addUriRegex(uriRegex, pathDefinition.verb,
+        producesTypes, customSerialization,
+        (request, response) -> processRouteHandler(pathDefinition, method, request, response)
     );
+  }
+
+  private boolean getCustomSerialization(boolean endPointCustom, CustomSerialization methodCustomSerialization) {
+    switch (methodCustomSerialization) {
+      case TRUE:
+        return true;
+
+      case FALSE:
+        return false;
+
+      default:
+        return endPointCustom;
+    }
   }
 
   public RestUriRouter<ByteBuf, ByteBuf> getRestUriRouter() {

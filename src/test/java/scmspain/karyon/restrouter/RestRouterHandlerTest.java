@@ -11,6 +11,7 @@ import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import org.hamcrest.Matchers;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import rx.Observable;
@@ -343,6 +344,8 @@ public class RestRouterHandlerTest {
     setCustomRoute(true);
     setProduces("text/xml");
 
+    given(routeHandler.process(request, response))
+        .willReturn(Observable.empty());
 
     // When
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
@@ -350,10 +353,11 @@ public class RestRouterHandlerTest {
 
     responseBody.subscribe(subscriber);
 
+
     // Then
     //  If it's custom the elements in the observable will remain in there as it wouldn't be touch
     //  TODO: should we throw an exception in those cases?
-    assertThat(subscriber.getOnNextEvents().size(), is(1));
+    subscriber.assertNoErrors();
 
     verify(errorHandler, never()).handleError(any(), any());
     verify(routeHandler).process(request, response);
@@ -388,7 +392,5 @@ public class RestRouterHandlerTest {
 
     assertThat(throwableList, hasItem(Matchers.isA(RuntimeException.class)));
   }
-
-  // TODO: More tests, check Box excel file
 
 }

@@ -12,11 +12,11 @@ import scmspain.karyon.restrouter.auth.NoAuthenticationServiceImpl;
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Path {
-
   String value();
 
   String method();
 
   Class<? extends AuthenticationService> authentication() default NoAuthenticationServiceImpl.class;
 
+  CustomSerialization customSerialization() default CustomSerialization.DEFAULT;
 }

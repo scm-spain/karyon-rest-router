@@ -16,26 +16,26 @@ public class SerializeManager {
 
   private ErrorHandler errorHandler;
 
+  public SerializeManager(Configuration configuration) {
+    setSerializers(configuration.getSerializers());
+    this.defaultContentType = configuration.getDefaultContentType();
+    this.errorHandler = configuration.getErrorHandler();
 
-  public void setDefaultContentType(String defaultContentType) {
-    this.defaultContentType = defaultContentType;
+    validate();
   }
 
-  public void setSerializers(Serializer... serializers) {
-    setSerializers(Arrays.asList(serializers));
+  private void validate() {
+
   }
 
-  public void setSerializers(List<Serializer> serializers) {
+
+  private void setSerializers(List<Serializer> serializers) {
     this.serializers = new HashMap<>();
     for (Serializer serializer: serializers) {
       for (String mediaType: serializer.getMediaTypes()) {
         this.serializers.put(mediaType, serializer);
       }
     }
-  }
-
-  public void setErrorHandler(ErrorHandler errorHandler) {
-    this.errorHandler = errorHandler;
   }
 
   public ErrorHandler getErrorHandler() {

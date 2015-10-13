@@ -10,7 +10,7 @@ import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 
 public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, ByteBuf> {
 
-  private SerializeManager serializeManager = new SerializeManager();
+  private Configuration configuration;
 
   public KaryonRestRouterModule() {
     super("karyonRestModule", ByteBuf.class, ByteBuf.class);
@@ -21,19 +21,18 @@ public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, B
   }
 
   public void setConfiguration(Configuration configuration) {
-    this.serializeManager.setDefaultContentType(configuration.getDefaultContentType());
-    this.serializeManager.setSerializers(configuration.getSerializers());
-    this.serializeManager.setErrorHandler(configuration.getErrorHandler());
+    this.configuration = configuration;
   }
 
   @Override
   protected void configure() {
     bind(RestUriRouter.class);
-    bind(SerializeManager.class).toInstance(serializeManager);
     bind(RestRouterScanner.class);
 
-    bindRouter().to(RestRouterHandler.class);
     super.configure();
+
+    bind(SerializeManager.class).toInstance(new SerializeManager(configuration));
+    bindRouter().to(RestRouterHandler.class);
   }
 
 }
