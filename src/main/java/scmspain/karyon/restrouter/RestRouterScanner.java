@@ -77,7 +77,7 @@ public class RestRouterScanner {
 
     for(Route<ByteBuf, ByteBuf> route: routes) {
       Set<String> produces = route.getProduces();
-      boolean custom = route.isCustom();
+      boolean custom = route.isCustomSerialization();
 
       if(serializeManager.getSupportedMediaTypes().isEmpty() && !custom) {
         String message = "There isn't serializers configured with a serialized route '" + route.getName() + "'";

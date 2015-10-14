@@ -11,7 +11,6 @@ import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import org.hamcrest.Matchers;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import rx.Observable;
@@ -129,7 +128,7 @@ public class RestRouterHandlerTest {
   }
 
   private void setCustomRoute(boolean isCustom) {
-    given(route.isCustom())
+    given(route.isCustomSerialization())
         .willReturn(isCustom);
   }
 

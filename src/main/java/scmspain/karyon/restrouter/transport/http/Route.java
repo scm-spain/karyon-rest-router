@@ -1,7 +1,6 @@
 package scmspain.karyon.restrouter.transport.http;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
 import netflix.karyon.transport.interceptor.InterceptorKey;
@@ -16,15 +15,17 @@ public class Route<I, O> {
   private final InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key;
   private final RouteHandler<I, O> routeHandler;
   private Set<String> produces = new HashSet<>();
-  private boolean custom;
+  private boolean customSerialization;
   private String name;
 
-  public Route(String name, InterceptorKey<HttpServerRequest<I>, HttpKeyEvaluationContext> key,
-               Collection<String> produces, boolean custom, RouteHandler<I, O> routeHandler) {
+  public Route(String name, InterceptorKey<HttpServerRequest<I>,
+               HttpKeyEvaluationContext> key, Collection<String> produces,
+               boolean customSerialization, RouteHandler<I, O> routeHandler) {
+
     this.name = name;
     this.key = key;
     this.routeHandler = routeHandler;
-    this.custom = custom;
+    this.customSerialization = customSerialization;
     this.produces = ImmutableSet.copyOf(produces);
   }
 
@@ -40,8 +41,8 @@ public class Route<I, O> {
     return produces;
   }
 
-  public boolean isCustom() {
-    return custom;
+  public boolean isCustomSerialization() {
+    return customSerialization;
   }
 
   public String getName() {

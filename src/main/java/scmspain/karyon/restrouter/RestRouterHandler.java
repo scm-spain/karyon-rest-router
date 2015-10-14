@@ -46,11 +46,12 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
         .orElse(new RouteNotFound<>());
     Observable<Void> result;
 
-    if (route.isCustom()) {
-      result = handleCustom(route, request, response);
+    if (route.isCustomSerialization()) {
+      result = handleCustomSerialization(route, request, response);
 
     } else {
       result = handleSupported(route, request, response);
+
     }
 
     return result;
@@ -86,7 +87,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
     // If RouteNotFound is not handle it will be handled here
     resultObs = resultObs.onErrorResumeNext(throwable -> {
-      if(throwable instanceof RouteNotFoundException) {
+      if (throwable instanceof RouteNotFoundException) {
         response.setStatus(HttpResponseStatus.NOT_FOUND);
 
         return Observable.just("404 DTO NOT FOUND");
@@ -102,9 +103,9 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   }
 
 
-  public Observable<Void> handleCustom(Route<ByteBuf,ByteBuf> route,
-                                       HttpServerRequest<ByteBuf> request,
-                                       HttpServerResponse<ByteBuf> response) {
+  public Observable<Void> handleCustomSerialization(Route<ByteBuf, ByteBuf> route,
+                                                    HttpServerRequest<ByteBuf> request,
+                                                    HttpServerResponse<ByteBuf> response) {
 
     return route.getHandler()
         .process(request, response)
