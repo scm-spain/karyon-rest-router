@@ -252,8 +252,6 @@ public class KaryonRestRouterTest {
             .toBlocking().first();
 
     Assert.assertEquals("{\"value\":\"1\"}", body);
-
-
   }
 
 }
