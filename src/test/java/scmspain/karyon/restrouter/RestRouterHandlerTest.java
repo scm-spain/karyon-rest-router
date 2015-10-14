@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpRequestHeaders;
 import io.reactivex.netty.protocol.http.server.HttpResponseHeaders;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
@@ -17,6 +18,7 @@ import rx.Observable;
 import rx.observers.TestSubscriber;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
+import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.serializer.Serializer;
@@ -32,7 +34,6 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -148,7 +149,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -170,7 +171,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -192,7 +193,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -214,7 +215,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler).handleError(isA(InvalidAcceptHeaderException.class), any());
+    verify(errorHandler).handleError(eq(request), isA(InvalidAcceptHeaderException.class), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
   }
@@ -236,7 +237,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -259,7 +260,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler).handleError(isA(CannotSerializeException.class), any());
+    verify(errorHandler).handleError(eq(request), isA(CannotSerializeException.class), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
   }
@@ -282,7 +283,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "text/xml");
@@ -306,7 +307,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -330,7 +331,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler).handleError(isA(CannotSerializeException.class), any());
+    verify(errorHandler).handleError(eq(request), isA(CannotSerializeException.class), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
   }
 
@@ -358,7 +359,7 @@ public class RestRouterHandlerTest {
     //  TODO: should we throw an exception in those cases?
     subscriber.assertNoErrors();
 
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer, never()).serialize(any(), any());
     verify(response.getHeaders(), never()).setHeader(any(), any());
@@ -390,6 +391,58 @@ public class RestRouterHandlerTest {
     verify(response.getHeaders(), never()).setHeader(any(), any());
 
     assertThat(throwableList, hasItem(Matchers.isA(RuntimeException.class)));
+  }
+
+  @Test
+  public void testWhenThereIsNotErrorHandlerAndUsesCustomSerializationThenItCallsDefaultErrorHandler() {
+    // Given
+    setAccept("application/json");
+    setSupportedContents("application/json");
+    setCustomRoute(true);
+
+
+    given(routeHandler.process(request, response))
+        .willReturn(Observable.error(new UnsupportedFormatException("test")));
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
+    //verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+    verify(response).setStatus(HttpResponseStatus.BAD_REQUEST);
+
+
+  }
+
+  @Test
+  public void testWhenThereIsNotErrorHandlerAndNotCustomThenItCallsDefaultErrorHandler() {
+    // Given
+    setAccept("application/json");
+    setSupportedContents("application/json");
+    setCustomRoute(false);
+
+    given(serializerManager.getErrorHandler())
+        .willReturn(null);
+
+    given(routeHandler.process(request, response))
+        .willReturn(Observable.error(new UnsupportedFormatException("test")));
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
+    verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+    verify(response).setStatus(HttpResponseStatus.BAD_REQUEST);
+
+
   }
 
 }

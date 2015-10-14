@@ -7,7 +7,6 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.netflix.config.ConfigurationManager;
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import org.slf4j.Logger;
@@ -19,13 +18,10 @@ import scmspain.karyon.restrouter.annotation.Produces;
 import scmspain.karyon.restrouter.core.MethodParameterResolver;
 import scmspain.karyon.restrouter.core.ResourceLoader;
 import scmspain.karyon.restrouter.core.URIParameterParser;
-import scmspain.karyon.restrouter.exception.ParamAnnotationException;
-import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 import scmspain.karyon.restrouter.transport.http.Route;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -195,23 +191,11 @@ public class RestRouterScanner {
           params,
           queryParams);
 
+
       return (Observable) method.invoke(injector.getInstance(endpoint.klass), invokeParams);
 
-    } catch (IllegalAccessException e) {
-      //Should never get here
-      response.setStatus(HttpResponseStatus.FORBIDDEN);
-      throw new RuntimeException("Exception invoking method: " + method.toString());
-    } catch (ParamAnnotationException e) {
-      response.setStatus(HttpResponseStatus.BAD_REQUEST);
-      return Observable.empty();
-    } catch (UnsupportedFormatException e) {
-      response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-      throw new RuntimeException(
-          String.format("Impossible to resolve params in method \"%s\" ",
-              method.toString()), e);
-    } catch (InvocationTargetException e) {
-      response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-      throw new RuntimeException("Exception invoking method " + method.toString(), e);
+    } catch (Throwable e) {
+      return Observable.error(e);
     }
   }
 

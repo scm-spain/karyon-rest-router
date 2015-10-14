@@ -3,7 +3,6 @@ package scmspain.karyon.restrouter;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import io.reactivex.netty.protocol.http.server.RequestHandler;
@@ -12,8 +11,9 @@ import org.commonjava.mimeparse.MIMEParse;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
-import scmspain.karyon.restrouter.exception.RouteNotFoundException;
+import scmspain.karyon.restrouter.handlers.DefaultErrorHandler;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
+import scmspain.karyon.restrouter.handlers.RestRouterErrorDTO;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.serializer.SerializeWriter;
 import scmspain.karyon.restrouter.serializer.Serializer;
@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   private SerializeManager serializerManager;
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
+  private DefaultErrorHandler defaultErrorHandler = new DefaultErrorHandler();
 
   @Inject
   public RestRouterHandler(RestUriRouter<ByteBuf, ByteBuf> restUriRouter,
@@ -77,7 +78,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
           ErrorHandler handler = serializerManager.getErrorHandler();
 
           if (handler != null) {
-            return handler.handleError(throwable, response::setStatus);
+            return handler.handleError(request, throwable, response::setStatus);
 
           } else {
             return Observable.error(throwable);
@@ -87,13 +88,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
     // If RouteNotFound is not handle it will be handled here
     resultObs = resultObs.onErrorResumeNext(throwable -> {
-      if (throwable instanceof RouteNotFoundException) {
-        response.setStatus(HttpResponseStatus.NOT_FOUND);
-
-        return Observable.just("404 DTO NOT FOUND");
-      } else {
-        return Observable.error(throwable);
-      }
+      return defaultErrorHandler.handleError(request, throwable, response::setStatus);
     });
 
     Serializer serializer = serializerManager.getSerializer(contentType);
@@ -107,9 +102,21 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
                                                     HttpServerRequest<ByteBuf> request,
                                                     HttpServerResponse<ByteBuf> response) {
 
-    return route.getHandler()
-        .process(request, response)
-        .cast(Void.class);
+    Observable<Object> resultObs = route.getHandler()
+        .process(request, response);
+
+    resultObs = resultObs.onErrorResumeNext(throwable -> {
+      return defaultErrorHandler.handleError(request, throwable, response::setStatus)
+          .map(this::serializeErrorDto)
+          .flatMap(response::writeStringAndFlush);
+    });
+
+    return resultObs.cast(Void.class);
+  }
+
+  private String serializeErrorDto(RestRouterErrorDTO errorDTO) {
+    return "{\"description\":\"" + errorDTO.getDescription() + "\",\"timestamp\":\"" + errorDTO.getTimestamp() + "\"}";
+
   }
 
   private Set<String> getSupportedContentTypes(Route<ByteBuf, ByteBuf> route) {
