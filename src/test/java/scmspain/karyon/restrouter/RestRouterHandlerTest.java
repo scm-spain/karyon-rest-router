@@ -445,4 +445,133 @@ public class RestRouterHandlerTest {
 
   }
 
+  @Test	
+  public void testWhenAcceptHasParametersItShouldDetectCorrectlyTheContentTypePart() {
+    // Given
+    setAccept("application/json; version=33");
+    setSupportedContents("application/json");
+    setCustomRoute(false);
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
+    verify(errorHandler, never()).handleError(any(), any());
+    verify(routeHandler).process(request, response);
+    verify(serializer).serialize(eq(resultBody), any());
+    verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+  }
+
+  @Test
+  public void testWhenAcceptHasParametersWithMultipleContentsItShouldDetectCorrectlyTheContentTypePart() {
+    // Given
+    setAccept("application/xml, application/json; version=2");
+    setSupportedContents("application/json");
+    setCustomRoute(false);
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
+    verify(errorHandler, never()).handleError(any(), any());
+    verify(routeHandler).process(request, response);
+    verify(serializer).serialize(eq(resultBody), any());
+    verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+  }
+
+  @Test
+  public void testWhenAcceptHasMultipleFormatItShouldUseThePreferred() {
+    // Given
+    setAccept("application/xml, application/json");
+    setSupportedContents("application/json", "application/xml");
+    setCustomRoute(false);
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
+    verify(errorHandler, never()).handleError(any(), any());
+    verify(routeHandler).process(request, response);
+    verify(serializer).serialize(eq(resultBody), any());
+    verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/xml");
+  }
+
+  @Test
+  public void testWhenAcceptHasMultipleFormatItShouldUseThePreferredAlsoUsing() {
+    // Given
+    setAccept("application/xml, application/json");
+    setSupportedContents("application/json", "application/xml");
+    setCustomRoute(false);
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
+    verify(errorHandler, never()).handleError(any(), any());
+    verify(routeHandler).process(request, response);
+    verify(serializer).serialize(eq(resultBody), any());
+    verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/xml");
+  }
+
+  /**
+   * http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
+   */
+  @Test
+  public void itShouldResolveContentTypeAccordingToRFC2616Sec14WildcardsAreNotPreferred() {
+    // Given
+    setAccept("application/*, application/xml");
+    setSupportedContents("application/json", "application/xml");
+    setCustomRoute(false);
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
+    verify(errorHandler, never()).handleError(any(), any());
+    verify(routeHandler).process(request, response);
+    verify(serializer).serialize(eq(resultBody), any());
+    verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/xml");
+  }
+
+  @Test
+  public void itShouldResolveContentTypeAccordingToRFC2616Sec14WildcardsIsTheFallbackIfItCannotSerializeInTheOthers() {
+    // Given
+    setAccept("text/*, text/json");
+    setSupportedContents("text/xml", "application/json");
+    setCustomRoute(false);
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    subscriber.assertReceivedOnNext(Collections.emptyList());
+    verify(errorHandler, never()).handleError(any(), any());
+    verify(routeHandler).process(request, response);
+    verify(serializer).serialize(eq(resultBody), any());
+    verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "text/xml");
+  }
+
 }
