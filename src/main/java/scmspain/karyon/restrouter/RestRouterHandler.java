@@ -161,6 +161,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
       return serializeContentType;
 
+      // TODO: Revisar si esto puede pasar, ver validateAcceptValue
     } catch(IllegalArgumentException e) {
       throw new CannotSerializeException(acceptHeader, e);
     }
