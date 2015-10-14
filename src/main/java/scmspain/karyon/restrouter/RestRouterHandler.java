@@ -172,6 +172,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
     try {
       Stream.of(mediaTypesStr)
+          .map(String::trim)
           .map(MediaType::parse)
           .collect(Collectors.toList());
 
