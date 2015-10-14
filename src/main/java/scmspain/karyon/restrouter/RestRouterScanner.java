@@ -2,7 +2,6 @@ package scmspain.karyon.restrouter;
 
 
 import com.google.common.base.Predicates;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
@@ -14,7 +13,6 @@ import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
-import scmspain.karyon.restrouter.annotation.CustomSerialization;
 import scmspain.karyon.restrouter.annotation.Endpoint;
 import scmspain.karyon.restrouter.annotation.Path;
 import scmspain.karyon.restrouter.annotation.Produces;
@@ -27,7 +25,6 @@ import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 import scmspain.karyon.restrouter.transport.http.Route;
 
-import javax.annotation.PostConstruct;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -65,14 +62,12 @@ public class RestRouterScanner {
     String verb;
     Method method;
     Class<?> klass;
-    CustomSerialization customSerialization;
 
-    PathDefinition(Method method, String uri, String verb, CustomSerialization customSerialization) {
+    PathDefinition(Method method, String uri, String verb) {
       this.method = method;
       this.klass = method.getDeclaringClass();
       this.uri = uri;
       this.verb = verb;
-      this.customSerialization = customSerialization;
     }
   }
 
@@ -131,7 +126,7 @@ public class RestRouterScanner {
             ).stream())
         .map(method -> {
           Path path = method.getAnnotation(Path.class);
-          return new PathDefinition(method, path.value(), path.method(), path.customSerialization());
+          return new PathDefinition(method, path.value(), path.method());
         })
         //Double sorting, so we get the precedence right
         .sorted((endpoint1, endpoint2) -> endpoint1.uri.indexOf("{") - endpoint2.uri.indexOf("{"))
@@ -142,11 +137,7 @@ public class RestRouterScanner {
   private void configurePath(PathDefinition pathDefinition) {
     Method method = pathDefinition.method;
 
-    boolean custom = isCustom(method);
-
-
-
-    Endpoint endpoint = pathDefinition.klass.getAnnotation(Endpoint.class);
+    boolean isCustomSerialization = isCustom(method);
 
     // If produces get the list media types, if not it returns an empty list
     List<String> producesTypes = Stream.of(method.getAnnotations())
@@ -159,12 +150,12 @@ public class RestRouterScanner {
 
     String uriRegex = parameterParser.getUriRegex(pathDefinition.uri);
 
-    boolean customSerialization = getCustomSerialization(endpoint.customSerialization(), pathDefinition.customSerialization);
+
 
     String name = pathDefinition.klass.getName() + "." + method.getName();
 
     restUriRouter.addUriRegex(name, uriRegex, pathDefinition.verb,
-        producesTypes, customSerialization,
+        producesTypes, isCustomSerialization,
         (request, response) -> processRouteHandler(pathDefinition, method, request, response)
     );
   }
@@ -181,23 +172,6 @@ public class RestRouterScanner {
 
     } else {
       throw new RuntimeException("Unexpected return type in path " + returnType.getName());
-    }
-  }
-
-  private void validatePath(PathDefinition pathDefinition) {
-
-  }
-
-  private boolean getCustomSerialization(boolean endPointCustom, CustomSerialization methodCustomSerialization) {
-    switch (methodCustomSerialization) {
-      case TRUE:
-        return true;
-
-      case FALSE:
-        return false;
-
-      default:
-        return endPointCustom;
     }
   }
 

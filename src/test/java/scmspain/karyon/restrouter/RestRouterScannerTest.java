@@ -10,7 +10,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import rx.Observable;
-import scmspain.karyon.restrouter.annotation.CustomSerialization;
 import scmspain.karyon.restrouter.annotation.Endpoint;
 import scmspain.karyon.restrouter.annotation.Path;
 import scmspain.karyon.restrouter.annotation.Produces;
@@ -141,20 +140,6 @@ public class RestRouterScannerTest {
     verify(restUriRouter).addUriRegex(any(), any(), any(), any(), eq(true), any());
   }
 
-  @Test
-  public void givenASerializableEndpointShouldBeNotBeCustom() {
-    // Given
-    given(resourceLoader.find(any(), eq(Endpoint.class)))
-        .willReturn(Sets.newHashSet(EndpointWithSerialization.class));
-
-    // When
-    new RestRouterScanner(injector, parameterParser,
-        rmParameterInjector, resourceLoader, restUriRouter);
-
-    // Then
-    verify(restUriRouter).addUriRegex(any(), any(), any(), any(), eq(false), any());
-  }
-
   /*
   @Test
   public void givenAConfigurationWithoutSupportedContentWithAtLeastOneRouteNonCustomItShouldThrowAnException() {
@@ -190,14 +175,6 @@ public class RestRouterScannerTest {
 
   @Endpoint
   static class DefaultEndpoint {
-    @Path(value = "/path", method = "GET")
-    public Observable<Void> path() {
-      return null;
-    }
-  }
-
-  @Endpoint(customSerialization = false)
-  static class EndpointWithSerialization {
     @Path(value = "/path", method = "GET")
     public Observable<Void> path() {
       return null;
@@ -251,9 +228,9 @@ public class RestRouterScannerTest {
     }
   }
 
-  @Endpoint(customSerialization = false)
+  @Endpoint
   static class CustomMethodSerialization {
-    @Path(value = "/path", method = "GET", customSerialization = CustomSerialization.TRUE)
+    @Path(value = "/path", method = "GET")
     public Observable<Void> path() {
       return null;
     }

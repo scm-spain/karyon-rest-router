@@ -1,6 +1,6 @@
 package scmspain.karyon.restrouter.annotation;
 
-import scmspain.karyon.restrouter.serializer.Serializer;
+import scmspain.karyon.restrouter.serializer.Configuration;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  * serialized.
  * It will fail during initialization if the media types configured using this
  * annotation doesn't have an appropriate serializer.
- * {@link scmspain.karyon.restrouter.KaryonRestRouterModule#addSerializers(Serializer...)}
+ * {@link scmspain.karyon.restrouter.KaryonRestRouterModule#setConfiguration(Configuration)}
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

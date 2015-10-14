@@ -18,5 +18,4 @@ public @interface Path {
 
   Class<? extends AuthenticationService> authentication() default NoAuthenticationServiceImpl.class;
 
-  CustomSerialization customSerialization() default CustomSerialization.DEFAULT;
 }

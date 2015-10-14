@@ -6,7 +6,6 @@ import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import javax.ws.rs.HttpMethod;
 import rx.Observable;
-import scmspain.karyon.restrouter.annotation.CustomSerialization;
 import scmspain.karyon.restrouter.annotation.Endpoint;
 import scmspain.karyon.restrouter.annotation.Path;
 import scmspain.karyon.restrouter.annotation.PathParam;
@@ -21,7 +20,7 @@ public class ExampleEndpointController {
 
   }
 
-  @Path(value = "/example_json_interceptor/{id}", method = HttpMethod.GET, customSerialization = CustomSerialization.FALSE)
+  @Path(value = "/example_json_interceptor/{id}", method = HttpMethod.GET)
   public Observable<ExampleDTO> getEndpointWithQueryParamsReturnDTOToPrintJson(HttpServerResponse<ByteBuf> response, @PathParam("id") String id, @QueryParam("filter") String filter) {
     response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
     return Observable.just(new ExampleDTO(id));
