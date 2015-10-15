@@ -1,9 +1,10 @@
 package scmspain.karyon.restrouter.core;
 
-import java.util.Map;
 import scmspain.karyon.restrouter.annotation.PathParam;
 import scmspain.karyon.restrouter.exception.ParamAnnotationException;
 import scmspain.karyon.restrouter.exception.PathParamNotFoundException;
+
+import java.util.Map;
 
 public class PathParamAnnotation implements ParamAnnotation {
 

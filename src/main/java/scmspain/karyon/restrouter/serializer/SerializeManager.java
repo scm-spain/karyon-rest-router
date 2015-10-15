@@ -4,7 +4,6 @@ import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
 
 import javax.inject.Inject;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

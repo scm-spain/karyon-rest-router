@@ -4,9 +4,7 @@ import scmspain.karyon.restrouter.RouteNotFoundHandler;
 
 import java.util.Collections;
 
-/**
- * Created by pablo.diaz on 8/10/15.
- */
+
 public class RouteNotFound<I,O> extends Route<I,O> {
   public RouteNotFound() {
     super("not_found", (request, context) -> true, Collections.emptyList(), false, new RouteNotFoundHandler<>());

@@ -2,6 +2,7 @@ package scmspain.karyon.restrouter.core;
 
 
 import com.google.inject.Singleton;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;

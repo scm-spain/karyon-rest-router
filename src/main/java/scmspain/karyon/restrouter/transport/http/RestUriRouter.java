@@ -1,13 +1,10 @@
 package scmspain.karyon.restrouter.transport.http;
 
-import com.google.inject.Inject;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
-import netflix.karyon.transport.interceptor.InterceptorKey;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.RouteNotFoundException;
-import scmspain.karyon.restrouter.serializer.SerializeManager;
 
 import javax.inject.Singleton;
 import java.util.Collection;

@@ -3,7 +3,6 @@ package scmspain.karyon.restrouter.core;
 import com.google.common.base.Preconditions;
 import org.codehaus.jackson.map.ObjectMapper;
 import scmspain.karyon.restrouter.serializer.Serializer;
-import scmspain.karyon.restrouter.serializer.SerializeWriter;
 
 import java.io.IOException;
 import java.io.OutputStream;

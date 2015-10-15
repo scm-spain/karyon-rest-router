@@ -4,14 +4,15 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Map;
 import scmspain.karyon.restrouter.annotation.PathParam;
 import scmspain.karyon.restrouter.annotation.QueryParam;
 import scmspain.karyon.restrouter.exception.ParamAnnotationException;
 import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Map;
 
 @Singleton
 public class MethodParameterResolver {

@@ -1,13 +1,12 @@
 package scmspain.karyon.restrouter.core;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import scmspain.karyon.restrouter.annotation.QueryParam;
 import scmspain.karyon.restrouter.exception.ParamAnnotationException;
 import scmspain.karyon.restrouter.exception.QueryParamRequiredNotFoundException;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class QueryParamAnnotation implements ParamAnnotation {
   private final QueryParam queryParam;

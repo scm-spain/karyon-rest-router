@@ -1,12 +1,8 @@
 package scmspain.karyon.restrouter;
 
-import com.google.inject.Provider;
-import com.google.inject.binder.AnnotatedBindingBuilder;
 import io.netty.buffer.ByteBuf;
 import netflix.karyon.transport.http.KaryonHttpModule;
-import scmspain.karyon.restrouter.handlers.ErrorHandler;
 import scmspain.karyon.restrouter.serializer.Configuration;
-import scmspain.karyon.restrouter.serializer.Serializer;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 
