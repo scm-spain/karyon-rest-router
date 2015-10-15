@@ -42,9 +42,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-/**
- * Created by pablo.diaz on 6/10/15.
- */
+
 public class RestRouterHandlerTest {
   TestSubscriber<Void> subscriber = new TestSubscriber<>();
 
@@ -460,7 +458,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -481,7 +479,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -502,7 +500,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/xml");
@@ -523,7 +521,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/xml");
@@ -547,7 +545,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/xml");
@@ -568,7 +566,7 @@ public class RestRouterHandlerTest {
 
     // Then
     subscriber.assertReceivedOnNext(Collections.emptyList());
-    verify(errorHandler, never()).handleError(any(), any());
+    verify(errorHandler, never()).handleError(eq(request), any(), any());
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "text/xml");
