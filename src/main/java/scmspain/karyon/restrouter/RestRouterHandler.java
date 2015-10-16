@@ -22,6 +22,7 @@ import scmspain.karyon.restrouter.transport.http.Route;
 import scmspain.karyon.restrouter.transport.http.RouteNotFound;
 
 import javax.inject.Inject;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -30,15 +31,46 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   private SerializeManager serializerManager;
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
   private DefaultErrorHandler defaultErrorHandler = new DefaultErrorHandler();
+  private ErrorHandler<ByteBuf, ? super Object> errorHandler;
 
+  /**
+   * Creates an instance
+   * @param restUriRouter the rest uri router
+   * @param serializerManager the serializer manager
+   * @param errorHandler the error handler
+   */
   @Inject
   public RestRouterHandler(RestUriRouter<ByteBuf, ByteBuf> restUriRouter,
-                           SerializeManager serializerManager) {
+                           SerializeManager serializerManager,
+                           ErrorHandler<ByteBuf, ? super Object> errorHandler) {
 
     this.serializerManager = serializerManager;
     this.restUriRouter = restUriRouter;
+    this.errorHandler = errorHandler;
   }
 
+  /**
+   * <p>
+   *   It handles every request and delegates to the appropriate {@link scmspain.karyon.restrouter.annotation.Endpoint}
+   * </p>
+   * <p>
+   *   It also uses negotiates the response content using accept header and applies the corresponding
+   *   serializer according to the {@link scmspain.karyon.restrouter.annotation.Path} annotated
+   *   method using the return type of the method.
+   * </p>
+   * <p>
+   *   If the method returns Observable&lt;Void%gt; it will not use the accept negociation, so it will
+   *   be the responsibility of the endpoint method to handle it appropriately.
+   * </p>
+   * <p>
+   *   If the method returns some other type of elements in the observable, it will use the content
+   *   negotiation and at the end it will try to serialize the DTO returned.
+   * </p>
+   * @param request the request
+   * @param response the response
+   * @return an Observable with just onComplete when all the resquest is handled and sent to the
+   * response, or onError is something bad, and uncontrolled happens
+   */
   @Override
   public Observable<Void> handle(HttpServerRequest<ByteBuf> request,
                                  HttpServerResponse<ByteBuf> response) {
@@ -58,27 +90,29 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     return result;
   }
 
-  public Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route,
+
+  private Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route,
                                           HttpServerRequest<ByteBuf> request,
                                           HttpServerResponse<ByteBuf> response) {
     Observable<Object> resultObs;
-    String contentType = serializerManager.getDefaultContentType();
-
+    Optional<String> negotiatedContentType;
     Set<String> supportedContentTypes = getSupportedContentTypes(route);
 
     try {
-      contentType = acceptNegociation(request, supportedContentTypes);
+      negotiatedContentType = Optional.of(acceptNegotiation(request, supportedContentTypes));
       resultObs = route.getHandler().process(request, response);
 
-    } catch (CannotSerializeException |InvalidAcceptHeaderException e) {
+    } catch (CannotSerializeException | InvalidAcceptHeaderException e) {
       resultObs = Observable.error(e);
+      negotiatedContentType = Optional.empty();
     }
 
-    resultObs = resultObs.onErrorResumeNext(throwable -> {
-          ErrorHandler handler = serializerManager.getErrorHandler();
+    String contentType = negotiatedContentType
+        .orElseGet(serializerManager::getDefaultContentType);
 
-          if (handler != null) {
-            return handler.handleError(request, throwable, response::setStatus);
+    resultObs = resultObs.onErrorResumeNext(throwable -> {
+          if (errorHandler != null) {
+            return errorHandler.handleError(request, throwable, response::setStatus);
 
           } else {
             return Observable.error(throwable);
@@ -91,14 +125,16 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
       return defaultErrorHandler.handleError(request, throwable, response::setStatus);
     });
 
-    Serializer serializer = serializerManager.getSerializer(contentType);
+    Serializer serializer = serializerManager.getSerializer(contentType)
+        .orElseThrow(() -> new CannotSerializeException("Cannot serialize " + contentType));
+
     SerializeWriter writer = new SerializeWriter(response, contentType);
 
     return resultObs.flatMap(result -> writer.write(result, serializer));
   }
 
 
-  public Observable<Void> handleCustomSerialization(Route<ByteBuf, ByteBuf> route,
+  private Observable<Void> handleCustomSerialization(Route<ByteBuf, ByteBuf> route,
                                                     HttpServerRequest<ByteBuf> request,
                                                     HttpServerResponse<ByteBuf> response) {
 
@@ -130,7 +166,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   }
 
 
-  private String acceptNegociation(HttpServerRequest<ByteBuf> request,
+  private String acceptNegotiation(HttpServerRequest<ByteBuf> request,
                                    Set<String> supportedContentTypes) {
 
     String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
@@ -157,22 +193,15 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   }
 
   private String getSerializerContentType(String acceptHeader, Set<String> supportedContentTypes) {
-    try {
-      validateAcceptValue(acceptHeader);
+    validateAcceptValue(acceptHeader);
 
 
-      String serializeContentType = MIMEParse.bestMatch(supportedContentTypes, acceptHeader);
-      if (StringUtils.isBlank(serializeContentType)) {
-        throw new CannotSerializeException("Cannot serialize with the given content type: " + acceptHeader);
-      }
-
-      return serializeContentType;
-
-      // TODO: Revisar si esto puede pasar, ver validateAcceptValue
-    } catch(IllegalArgumentException e) {
-      throw new CannotSerializeException(acceptHeader, e);
+    String serializeContentType = MIMEParse.bestMatch(supportedContentTypes, acceptHeader);
+    if (StringUtils.isBlank(serializeContentType)) {
+      throw new CannotSerializeException("Cannot serialize with the given content type: " + acceptHeader);
     }
 
+    return serializeContentType;
   }
 
   private void validateAcceptValue(String acceptHeaderValue) {

@@ -1,25 +1,15 @@
-plugins {
-    id 'java'
-    id 'maven-publish'
-}
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 group = 'com.scmspain.karyon'
 archivesBaseName = 'karyon-rest-router'
-version = '1.3-out_interceptor-SNAPSHOT'
+version = '1.2'
 
-// In this section you declare where to find the dependencies of your project
+
+sourceCompatibility = 1.8
+
 repositories {
-    // Use 'jcenter' for resolving your dependencies.
-    // You can declare any Maven/Ivy/file repository here.
-    mavenLocal()
-    maven {
-        credentials {
-            username project.hasProperty('artifactory_scm_user')? artifactory_scm_user: ''
-            password project.hasProperty('artifactory_scm_password')? artifactory_scm_password: ''
-        }
-
-        url "http://artifactory.scmspain.com/artifactory/libs-release-ms"
-    }
     mavenCentral()
 }
 
@@ -39,25 +29,18 @@ dependencies {
     testCompile 'com.sun.jersey:jersey-core:1.19'
     testCompile 'com.netflix.karyon:karyon2-archaius:2.7.1'
     testCompile 'com.tngtech.java:junit-dataprovider:1.10.0'
-    testCompile 'ch.qos.logback:logback-classic:1.1.3'
 
+    testCompile 'ch.qos.logback:logback-classic:1.1.3'
 
     compile 'com.netflix.karyon:karyon2-core:2.5.1'
     compile 'com.netflix.karyon:karyon2-governator:2.5.1'
     compile 'org.reflections:reflections:0.9.9'
-
-    compile 'org.commonjava.mimeparse:mimeparse:0.1.3.3' // https://github.com/jdcasey/mimeparse
-}
-
-tasks.withType(Test) {
-    testLogging {
-        exceptionFormat "full"
-    }
+    compile 'org.commonjava.mimeparse:mimeparse:0.1.3.3'
 }
 
 task javadocJar(type: Jar) {
     classifier = 'javadoc'
-    from Javadoc
+    from javadoc
 }
 
 task sourcesJar(type: Jar) {
@@ -65,38 +48,58 @@ task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
-// Task publishMavenJavaPublicationToMavenRepository is added in runtime so doFirst doesn't work propertly and must be done this way
-tasks.whenTaskAdded { t ->
-    if( t.name == "publishMavenJavaPublicationToMavenRepository"){
-        if (!project.hasProperty('artifactory_scm_user') || !project.hasProperty('artifactory_scm_password')) {
-            throw new GradleException("Properties 'artifactory_scm_user' and 'artifactory_scm_password' are mandatory to do a publish, please add this information in your ~/.gradle/gradle.properties")
-        }
-    }
+artifacts {
+    archives javadocJar, sourcesJar
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId 'com.scmspain'
-            version project.version
+signing {
+    required = false
+    sign configurations.archives
+}
 
-            from components.java
-
-            Artifact sourcesJar
-            Artifact javadocJar
-
-        }
-    }
+uploadArchives {
     repositories {
-        maven {
-            credentials {
-                username project.hasProperty('artifactory_scm_user')? artifactory_scm_user: ''
-                password project.hasProperty('artifactory_scm_password')? artifactory_scm_password: ''
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: hasProperty('ossrhUsername')?ossrhUsername:'', password: hasProperty('ossrhPassword')?ossrhPassword:'')
             }
 
-            url "http://artifactory.scmspain.com/artifactory/libs-release-ms"
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: hasProperty('ossrhUsername')?ossrhUsername:'', password: hasProperty('ossrhPassword')?ossrhPassword:'')
+            }
+
+            pom.project {
+                name 'com.scmspain.karyon:karyon-rest-router'
+                packaging 'jar'
+                // optionally artifactId can be defined here
+                description 'Module for manage endpoints REST in Karyon framework'
+                url 'https://github.com/scm-spain/karyon-rest-router'
+
+                scm {
+                    connection 'scm:git@github.com:scm-spain/karyon-rest-router.git'
+                    developerConnection 'scm:git@github.com:scm-spain/karyon-rest-router.git'
+                    url 'https://github.com/scm-spain/karyon-rest-router'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'victuxbb'
+                        name 'Victor Caldentey'
+                        email 'victor.caldentey@scmspain.com'
+                        organization 'SCM Spain'
+                        organizationUrl 'http://www.scmspain.com/'
+                    }
+                }
+            }
         }
     }
 }
-
-

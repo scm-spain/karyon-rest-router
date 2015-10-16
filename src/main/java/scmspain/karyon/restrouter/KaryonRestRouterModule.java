@@ -1,10 +1,14 @@
 package scmspain.karyon.restrouter;
 
+import com.google.inject.TypeLiteral;
 import io.netty.buffer.ByteBuf;
 import netflix.karyon.transport.http.KaryonHttpModule;
+import scmspain.karyon.restrouter.handlers.ErrorHandler;
 import scmspain.karyon.restrouter.serializer.Configuration;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
+
+import javax.inject.Provider;
 
 public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, ByteBuf> {
 
@@ -22,14 +26,20 @@ public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, B
     this.configuration = configuration;
   }
 
+
+
   @Override
   protected void configure() {
     bind(RestUriRouter.class);
 
     super.configure();
 
-    bind(SerializeManager.class).toInstance(new SerializeManager(configuration));
+    bind(SerializeManager.class).toInstance(new SerializeManager(configuration.getSerializers(), configuration.getDefaultContentType()));
     bind(RestRouterScanner.class);
+
+    bind(new TypeLiteral<ErrorHandler<ByteBuf, ? super Object>>(){})
+        .toProvider(configuration::getErrorHandler);
+
     bindRouter().to(RestRouterHandler.class);
 
   }

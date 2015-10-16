@@ -33,14 +33,6 @@ public class KaryonRestRouterTest {
     server.shutdown();
   }
 
-  public static void main(String[] args) throws Exception {
-    setUpBefore();
-
-    while(true) {
-      Thread.sleep(50000);
-    }
-  }
-
   @Test
   public void testEndpointGET() throws Exception {
     final CountDownLatch finishLatch = new CountDownLatch(1);

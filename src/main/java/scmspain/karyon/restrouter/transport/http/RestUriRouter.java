@@ -33,9 +33,11 @@ public class RestUriRouter<I, O> {
   /**
    * Add a new URI regex -&lt; Handler route to this router.
    *
+   * @param name the name of the route, just for logging purposes
    * @param uriRegEx URI regex to match
    * @param handler Request handler.
    * @param verb Request verb.
+   * @param produces the list of content types the route may return.
    * @return The updated router.
    */
   public RestUriRouter<I, O> addUriRegex(String name, String uriRegEx, String verb, Collection<String> produces,
@@ -43,15 +45,15 @@ public class RestUriRouter<I, O> {
     EnhancedRegexUriConstraintKey<I> interceptorKey =
         new EnhancedRegexUriConstraintKey<>(uriRegEx, verb);
 
-    routes.add(new Route<I, O>(name, interceptorKey, produces, custom, handler));
+    routes.add(new Route<>(name, interceptorKey, produces, custom, handler));
 
     return this;
   }
 
   /**
    * Find the best route for handling a request
-   * @param request
-   * @param response
+   * @param request the request
+   * @param response the response
    */
   public Optional<Route<I,O>> findBestMatch(HttpServerRequest<I> request, HttpServerResponse<O> response){
     HttpKeyEvaluationContext context = new HttpKeyEvaluationContext(response.getChannel());

@@ -1,5 +1,6 @@
 package scmspain.karyon.restrouter.serializer;
 
+import com.google.common.base.Preconditions;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
 
@@ -7,27 +8,36 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Manage the serializers
+ */
 public class SerializeManager {
 
   private Map<String, Serializer> serializers;
   private String defaultContentType;
 
-  private ErrorHandler errorHandler;
+  /**
+   * Creates a serializer manager
+   * @param serializers the list of serializers
+   * @param defaultContentType the default content type in case the request doesn't include an Accept header
+   */
+  public SerializeManager(List<Serializer> serializers, String defaultContentType) {
+    Preconditions.checkNotNull(serializers, "Serializers should not be null");
 
-  public SerializeManager(Configuration configuration) {
-    setSerializers(configuration.getSerializers());
-    this.defaultContentType = configuration.getDefaultContentType();
-    this.errorHandler = configuration.getErrorHandler();
-
+    setSerializers(serializers);
+    this.defaultContentType = defaultContentType;
   }
 
   @Inject
   private void validate() {
-    // err4: No hay serializacion para el default content type
+    getSerializer(defaultContentType)
+        .orElseThrow(() ->
+          new RuntimeException("There is no serializer configured for the default content type")
+    );
   }
-
 
   private void setSerializers(List<Serializer> serializers) {
     this.serializers = new HashMap<>();
@@ -38,26 +48,28 @@ public class SerializeManager {
     }
   }
 
-  public ErrorHandler getErrorHandler() {
-    return errorHandler;
-  }
-
+  /**
+   * @return the suported media types set
+   */
   public Set<String> getSupportedMediaTypes() {
     return serializers.keySet();
   }
 
+  /**
+   * @return the default content type used in case of Accept header is not send
+   */
   public String getDefaultContentType() {
     return defaultContentType;
   }
 
-  public Serializer getSerializer(String contentType) {
-    Serializer serializer = serializers.get(contentType);
-
-    if(serializer == null) {
-      throw new CannotSerializeException("Cannot serialize " + contentType);
-    }
-
-    return serializer;
+  /**
+   * Retrieves the serializer for a content type
+   * @param contentType the content type
+   * @return the serializer of the content type requested or {@link CannotSerializeException}
+   * if the content Type is not supported
+   */
+  public Optional<Serializer> getSerializer(String contentType) {
+    return Optional.ofNullable(serializers.get(contentType));
   }
 
 }

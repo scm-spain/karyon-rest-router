@@ -49,7 +49,7 @@ public class RestRouterHandlerTest {
   @Mock
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
   @Mock
-  private ErrorHandler errorHandler;
+  private ErrorHandler<ByteBuf, Object> errorHandler;
   @Mock
   private SerializeManager serializerManager;
   @Mock
@@ -99,8 +99,8 @@ public class RestRouterHandlerTest {
     given(serializerManager.getSupportedMediaTypes())
         .willReturn(ImmutableSet.of());
 
-    given(serializerManager.getErrorHandler())
-        .willReturn(errorHandler);
+//    given(serializerManager.getErrorHandler())
+//        .willReturn(errorHandler);
 
   }
 
@@ -112,7 +112,7 @@ public class RestRouterHandlerTest {
   private void setSupportedContents(String... supported) {
     for(String contentType: supported) {
       given(serializerManager.getSerializer(contentType))
-          .willReturn(serializer);
+          .willReturn(Optional.of(serializer));
     }
     given(serializerManager.getSupportedMediaTypes())
         .willReturn(Sets.newHashSet(supported));
@@ -140,7 +140,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -162,7 +162,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -184,7 +184,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -206,7 +206,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -228,7 +228,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -251,7 +251,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -274,7 +274,7 @@ public class RestRouterHandlerTest {
 
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -298,7 +298,7 @@ public class RestRouterHandlerTest {
 
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -322,7 +322,7 @@ public class RestRouterHandlerTest {
 
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -346,15 +346,11 @@ public class RestRouterHandlerTest {
         .willReturn(Observable.empty());
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
 
-
-    // Then
-    //  If it's custom the elements in the observable will remain in there as it wouldn't be touch
-    //  TODO: should we throw an exception in those cases?
     subscriber.assertNoErrors();
 
     verify(errorHandler, never()).handleError(eq(request), any(), any());
@@ -376,7 +372,7 @@ public class RestRouterHandlerTest {
 
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -403,7 +399,7 @@ public class RestRouterHandlerTest {
         .willReturn(Observable.error(new UnsupportedFormatException("test")));
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -423,14 +419,11 @@ public class RestRouterHandlerTest {
     setSupportedContents("application/json");
     setCustomRoute(false);
 
-    given(serializerManager.getErrorHandler())
-        .willReturn(null);
-
     given(routeHandler.process(request, response))
         .willReturn(Observable.error(new UnsupportedFormatException("test")));
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, null);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -451,7 +444,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -472,7 +465,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -493,7 +486,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -514,7 +507,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -538,7 +531,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);
@@ -559,7 +552,7 @@ public class RestRouterHandlerTest {
     setCustomRoute(false);
 
     // When
-    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager);
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
     Observable<Void> responseBody = restRouterHandler.handle(request, response);
 
     responseBody.subscribe(subscriber);

@@ -11,7 +11,10 @@ import scmspain.karyon.restrouter.exception.ParamAnnotationException;
 import scmspain.karyon.restrouter.exception.RouteNotFoundException;
 import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
 
-
+/**
+ * Default error handler, this is the error generated when the defined {@link ErrorHandler} cannot
+ * handle the generated exception
+ */
 public class DefaultErrorHandler implements ErrorHandler<ByteBuf, RestRouterErrorDTO> {
 
   @Override
