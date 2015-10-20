@@ -11,7 +11,7 @@ import org.commonjava.mimeparse.MIMEParse;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
-import scmspain.karyon.restrouter.handlers.DefaultErrorHandler;
+import scmspain.karyon.restrouter.handlers.DefaultKaryonErrorHandler;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
 import scmspain.karyon.restrouter.handlers.RestRouterErrorDTO;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
@@ -30,8 +30,8 @@ import java.util.stream.Stream;
 public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   private SerializeManager serializerManager;
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
-  private DefaultErrorHandler defaultErrorHandler = new DefaultErrorHandler();
-  private ErrorHandler<ByteBuf, ? super Object> errorHandler;
+  private DefaultKaryonErrorHandler defaultKaryonErrorHandler = new DefaultKaryonErrorHandler();
+  private ErrorHandler<ByteBuf> errorHandler;
 
   /**
    * Creates an instance
@@ -42,7 +42,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   @Inject
   public RestRouterHandler(RestUriRouter<ByteBuf, ByteBuf> restUriRouter,
                            SerializeManager serializerManager,
-                           ErrorHandler<ByteBuf, ? super Object> errorHandler) {
+                           ErrorHandler<ByteBuf> errorHandler) {
 
     this.serializerManager = serializerManager;
     this.restUriRouter = restUriRouter;
@@ -122,7 +122,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
     // If RouteNotFound is not handle it will be handled here
     resultObs = resultObs.onErrorResumeNext(throwable -> {
-      return defaultErrorHandler.handleError(request, throwable, response::setStatus);
+      return defaultKaryonErrorHandler.handleError(request, throwable, response::setStatus);
     });
 
     Serializer serializer = serializerManager.getSerializer(contentType)
@@ -142,7 +142,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
         .process(request, response);
 
     resultObs = resultObs.onErrorResumeNext(throwable -> {
-      return defaultErrorHandler.handleError(request, throwable, response::setStatus)
+      return defaultKaryonErrorHandler.handleError(request, throwable, response::setStatus)
           .map(this::serializeErrorDto)
           .flatMap(response::writeStringAndFlush);
     });

@@ -49,7 +49,7 @@ public class RestRouterHandlerTest {
   @Mock
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
   @Mock
-  private ErrorHandler<ByteBuf, Object> errorHandler;
+  private ErrorHandler<ByteBuf> errorHandler;
   @Mock
   private SerializeManager serializerManager;
   @Mock

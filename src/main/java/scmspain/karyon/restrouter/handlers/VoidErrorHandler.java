@@ -8,7 +8,7 @@ import rx.Observable;
  * default implementation
  * @param <T> the generic type of the {@link HttpServerRequest}
  */
-public class VoidErrorHandler<T> implements ErrorHandler<T, Object> {
+public class VoidErrorHandler<T> implements ErrorHandler<T> {
   private static final VoidErrorHandler<Object> INSTANCE = new VoidErrorHandler<>();
 
   @Override

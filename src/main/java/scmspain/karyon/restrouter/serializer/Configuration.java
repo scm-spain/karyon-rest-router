@@ -13,9 +13,9 @@ import java.util.List;
 public class Configuration {
   private String defaultContentType;
   private List<Serializer> serializers;
-  private ErrorHandler<ByteBuf, ? super Object> errorHandler;
+  private ErrorHandler<ByteBuf> errorHandler;
 
-  private Configuration(String defaultContentType, List<Serializer> serializers, ErrorHandler<ByteBuf, ? super Object> errorHandler) {
+  private Configuration(String defaultContentType, List<Serializer> serializers, ErrorHandler<ByteBuf> errorHandler) {
     this.defaultContentType = defaultContentType;
     this.serializers = serializers;
     this.errorHandler = errorHandler;
@@ -38,7 +38,7 @@ public class Configuration {
   /**
    * @return the error handler if configured, null otherwise
    */
-  public ErrorHandler<ByteBuf, ? super Object> getErrorHandler() {
+  public ErrorHandler<ByteBuf> getErrorHandler() {
     return errorHandler;
   }
 
@@ -77,7 +77,7 @@ public class Configuration {
    * Sets the error handler to use. It can be null if no error handler is needed
    * @param errorHandler the error handler
    */
-  public void setErrorHandler(ErrorHandler<ByteBuf, ? super Object> errorHandler) {
+  public void setErrorHandler(ErrorHandler<ByteBuf> errorHandler) {
     this.errorHandler = errorHandler;
   }
 
@@ -87,7 +87,7 @@ public class Configuration {
   public static final class Builder {
     private String defaultContentType;
     private List<Serializer> serializers = new ArrayList<>();
-    private ErrorHandler<ByteBuf, ? super Object> errorHandler = VoidErrorHandler.getInstance();
+    private ErrorHandler<ByteBuf> errorHandler = VoidErrorHandler.getInstance();
 
     private Builder(){
     }
@@ -117,7 +117,7 @@ public class Configuration {
      * @param errorHandler the error handler
      * @return the same builder
      */
-    public Builder errorHandler(ErrorHandler<ByteBuf, ? super Object> errorHandler) {
+    public Builder errorHandler(ErrorHandler<ByteBuf> errorHandler) {
       this.errorHandler = errorHandler;
       return this;
     }

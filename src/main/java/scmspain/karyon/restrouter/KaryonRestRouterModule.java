@@ -36,9 +36,9 @@ public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, B
     bind(SerializeManager.class).toInstance(new SerializeManager(configuration.getSerializers(), configuration.getDefaultContentType()));
     bind(RestRouterScanner.class);
 
-    Provider<ErrorHandler<ByteBuf, ? super Object>> errorHandlerProvider = configuration::getErrorHandler;
+    Provider<ErrorHandler<ByteBuf>> errorHandlerProvider = configuration::getErrorHandler;
 
-    bind(new TypeLiteral<ErrorHandler<ByteBuf, ? super Object>>() {})
+    bind(new TypeLiteral<ErrorHandler<ByteBuf>>() {})
         .toProvider(errorHandlerProvider);
 
     bindRouter().to(RestRouterHandler.class);

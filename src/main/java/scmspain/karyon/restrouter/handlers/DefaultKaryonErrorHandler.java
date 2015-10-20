@@ -15,7 +15,7 @@ import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
  * Default error handler, this is the error generated when the defined {@link ErrorHandler} cannot
  * handle the generated exception
  */
-public class DefaultErrorHandler implements ErrorHandler<ByteBuf, RestRouterErrorDTO> {
+public class DefaultKaryonErrorHandler implements ErrorHandler<ByteBuf> {
 
   @Override
   public Observable<RestRouterErrorDTO> handleError(
