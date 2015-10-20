@@ -6,7 +6,6 @@ import rx.Observable;
 /**
  * Interface of the ErrorHandler to handle errors generated in the routes
  * @param <T> Generic request type
- * @param <U> The Observable type it returns when it can handle the error
  */
 public interface ErrorHandler<T> {
   /**

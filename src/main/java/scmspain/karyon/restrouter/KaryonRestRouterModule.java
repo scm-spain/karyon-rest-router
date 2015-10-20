@@ -25,7 +25,9 @@ public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, B
     this.configuration = configuration;
   }
 
-
+  public Configuration getConfiguration() {
+    return configuration;
+  }
 
   @Override
   protected void configure() {
@@ -38,7 +40,8 @@ public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, B
 
     Provider<ErrorHandler<ByteBuf>> errorHandlerProvider = configuration::getErrorHandler;
 
-    bind(new TypeLiteral<ErrorHandler<ByteBuf>>() {})
+    bind(new TypeLiteral<ErrorHandler<ByteBuf>>() {
+    })
         .toProvider(errorHandlerProvider);
 
     bindRouter().to(RestRouterHandler.class);
