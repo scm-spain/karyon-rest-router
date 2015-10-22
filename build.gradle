@@ -1,10 +1,12 @@
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'signing'
+apply plugin: 'com.bmuschko.nexus'
+apply plugin: 'io.codearte.nexus-staging'
 
 group = 'com.scmspain.karyon'
 archivesBaseName = 'karyon-rest-router'
-version = '1.2'
+project.version = '1.2'
 
 
 sourceCompatibility = 1.8
@@ -13,6 +15,16 @@ repositories {
     mavenCentral()
 }
 
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3"
+    }
+}
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
@@ -27,67 +39,39 @@ dependencies {
     compile 'org.reflections:reflections:0.9.9'
 }
 
-task javadocJar(type: Jar) {
-    classifier = 'javadoc'
-    from javadoc
+nexusStaging {
+    packageGroup = "com.scmspain" //optional if packageGroup == project.getGroup()
+    stagingProfileId = "com.scmspain" //when not defined will be got from server using "packageGroup"
 }
 
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
+modifyPom {
+    project {
+        name 'com.scmspain.karyon:karyon-rest-router'
+        packaging 'jar'
+        // optionally artifactId can be defined here
+        description 'Module for manage endpoints REST in Karyon framework'
+        url 'https://github.com/scm-spain/karyon-rest-router'
 
-artifacts {
-    archives javadocJar, sourcesJar
-}
+        scm {
+            connection 'scm:git@github.com:scm-spain/karyon-rest-router.git'
+            developerConnection 'scm:git@github.com:scm-spain/karyon-rest-router.git'
+            url 'https://github.com/scm-spain/karyon-rest-router'
+        }
 
-signing {
-    required = false
-    sign configurations.archives
-}
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: hasProperty('ossrhUsername')?ossrhUsername:'', password: hasProperty('ossrhPassword')?ossrhPassword:'')
+        licenses {
+            license {
+                name 'The Apache License, Version 2.0'
+                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
             }
+        }
 
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: hasProperty('ossrhUsername')?ossrhUsername:'', password: hasProperty('ossrhPassword')?ossrhPassword:'')
-            }
-
-            pom.project {
-                name 'com.scmspain.karyon:karyon-rest-router'
-                packaging 'jar'
-                // optionally artifactId can be defined here
-                description 'Module for manage endpoints REST in Karyon framework'
-                url 'https://github.com/scm-spain/karyon-rest-router'
-
-                scm {
-                    connection 'scm:git@github.com:scm-spain/karyon-rest-router.git'
-                    developerConnection 'scm:git@github.com:scm-spain/karyon-rest-router.git'
-                    url 'https://github.com/scm-spain/karyon-rest-router'
-                }
-
-                licenses {
-                    license {
-                        name 'The Apache License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id 'victuxbb'
-                        name 'Victor Caldentey'
-                        email 'victor.caldentey@scmspain.com'
-                        organization 'SCM Spain'
-                        organizationUrl 'http://www.scmspain.com/'
-                    }
-                }
+        developers {
+            developer {
+                id 'victuxbb'
+                name 'Victor Caldentey'
+                email 'victor.caldentey@scmspain.com'
+                organization 'SCM Spain'
+                organizationUrl 'http://www.scmspain.com/'
             }
         }
     }
