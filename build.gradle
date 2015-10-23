@@ -41,7 +41,7 @@ dependencies {
 
 nexusStaging {
     packageGroup = "com.scmspain" //optional if packageGroup == project.getGroup()
-    stagingProfileId = "com.scmspain" //when not defined will be got from server using "packageGroup"
+    stagingProfileId = "7dd4d052409ec" //when not defined will be got from server using "packageGroup"
 }
 
 modifyPom {
