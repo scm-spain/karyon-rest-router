@@ -73,6 +73,28 @@ modifyPom {
                 organization 'SCM Spain'
                 organizationUrl 'http://www.scmspain.com/'
             }
+            developer {
+                id 'aramirez-es'
+                name 'Alberto Ramirez'
+                email 'alberto.ramirez@scmspain.com'
+                organization 'SCM Spain'
+                organizationUrl 'http://www.scmspain.com/'
+            }
+            developer {
+                id 'enriclluelles'
+                name 'Enric lluelles'
+                email 'enric.lluelles@scmspain.com'
+                organization 'SCM Spain'
+                organizationUrl 'http://www.scmspain.com/'
+            }
+            developer {
+                id 'javadegava'
+                name 'Javier leon'
+                email 'javier.leon@infojobs.net'
+                organization 'SCM Spain'
+                organizationUrl 'http://www.scmspain.com/'
+            }
+
         }
     }
 }
