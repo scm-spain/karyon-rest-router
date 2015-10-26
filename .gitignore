@@ -27,3 +27,6 @@ gradle-app.setting
 #Ignore .gradle dir
 .gradle
 build_release.gradle
+
+# Jenv
+.java-version

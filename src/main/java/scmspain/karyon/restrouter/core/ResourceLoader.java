@@ -1,8 +1,9 @@
 package scmspain.karyon.restrouter.core;
 
 import com.google.inject.Singleton;
-import java.util.Set;
 import org.reflections.Reflections;
+
+import java.util.Set;
 
 @Singleton
 public class ResourceLoader {

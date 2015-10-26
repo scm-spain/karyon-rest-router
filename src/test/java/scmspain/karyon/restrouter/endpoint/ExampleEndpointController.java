@@ -10,6 +10,7 @@ import scmspain.karyon.restrouter.annotation.Endpoint;
 import scmspain.karyon.restrouter.annotation.Path;
 import scmspain.karyon.restrouter.annotation.PathParam;
 import scmspain.karyon.restrouter.annotation.QueryParam;
+import scmspain.karyon.restrouter.endpoint.dto.ExampleDTO;
 
 @Singleton
 @Endpoint
@@ -17,6 +18,12 @@ public class ExampleEndpointController {
 
   public ExampleEndpointController() {
 
+  }
+
+  @Path(value = "/example_json_interceptor/{id}", method = HttpMethod.GET)
+  public Observable<ExampleDTO> getEndpointWithQueryParamsReturnDTOToPrintJson(HttpServerResponse<ByteBuf> response, @PathParam("id") String id, @QueryParam("filter") String filter) {
+    response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
+    return Observable.just(new ExampleDTO(id));
   }
 
 
