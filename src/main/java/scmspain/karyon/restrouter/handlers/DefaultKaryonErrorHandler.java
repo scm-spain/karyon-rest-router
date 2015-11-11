@@ -4,8 +4,6 @@ import com.google.common.net.HttpHeaders;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
@@ -18,7 +16,6 @@ import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
  * handle the generated exception
  */
 public class DefaultKaryonErrorHandler implements ErrorHandler<ByteBuf> {
-  private static final Logger L = LoggerFactory.getLogger(DefaultKaryonErrorHandler.class);
 
   @Override
   public Observable<RestRouterErrorDTO> handleError(
@@ -57,9 +54,6 @@ public class DefaultKaryonErrorHandler implements ErrorHandler<ByteBuf> {
 
     } else {
       statusCode.set(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-
-      L.error("Internal server error", throwable);
-
       return Observable.error(throwable);
     }
   }

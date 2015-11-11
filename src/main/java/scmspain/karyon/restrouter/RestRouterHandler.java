@@ -8,6 +8,8 @@ import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import io.reactivex.netty.protocol.http.server.RequestHandler;
 import org.apache.commons.lang.StringUtils;
 import org.commonjava.mimeparse.MIMEParse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
+  private static final Logger L = LoggerFactory.getLogger(RestRouterHandler.class);
   private SerializeManager serializerManager;
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
   private DefaultKaryonErrorHandler defaultKaryonErrorHandler = new DefaultKaryonErrorHandler();
@@ -87,9 +90,8 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
     }
 
-    return result;
+    return result.doOnError(throwable -> L.error("Internal Server Error", throwable));
   }
-
 
   private Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route,
                                           HttpServerRequest<ByteBuf> request,
