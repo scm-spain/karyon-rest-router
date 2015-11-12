@@ -90,7 +90,16 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
     }
 
-    return result.doOnError(throwable -> L.error("Internal Server Error", throwable));
+    return result.doOnError(throwable -> logError(throwable, request));
+  }
+
+  private void logError(Throwable throwable, HttpServerRequest<ByteBuf> request) {
+    String method = request.getHttpMethod().name();
+    String path = request.getPath();
+    String message = String.format("Internal server error requesting [%s %s]", method, path);
+
+    L.error(message, throwable);
+
   }
 
   private Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route,
