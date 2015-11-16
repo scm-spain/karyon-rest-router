@@ -28,6 +28,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -111,8 +112,7 @@ public class RestRouterScanner {
     this.parameterParser = parameterParser;
     this.rmParameterInjector = rmParameterInjector;
 
-    String basePackage = ConfigurationManager.getConfigInstance().getString(BASE_PACKAGE_PROPERTY);
-    Set<Class<?>> annotatedTypes = resourceLoader.find(basePackage, Endpoint.class);
+    Set<Class<?>> annotatedTypes = getEndpointClasses(resourceLoader);
 
     annotatedTypes.stream()
         .flatMap(klass ->
@@ -130,7 +130,19 @@ public class RestRouterScanner {
         .forEach(this::configurePath);
   }
 
-  private void configurePath(PathDefinition pathDefinition) {
+  private Set<Class<?>> getEndpointClasses(ResourceLoader resourceLoader) {
+    String commaSeparatedPackages = ConfigurationManager.getConfigInstance().getString(BASE_PACKAGE_PROPERTY);
+    List<String> stringList = Arrays.asList(commaSeparatedPackages.split(","));
+    Set<Class<?>> annotatedTypes = new HashSet<>();
+
+    for (String packageName : stringList) {
+      annotatedTypes.addAll(resourceLoader.find(packageName, Endpoint.class));
+    }
+
+    return annotatedTypes;
+  }
+
+    private void configurePath(PathDefinition pathDefinition) {
     Method method = pathDefinition.method;
 
     boolean isCustomSerialization = isCustom(method);
