@@ -3,16 +3,20 @@ package scmspain.karyon.restrouter;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import io.reactivex.netty.protocol.http.server.RequestHandler;
 import org.apache.commons.lang.StringUtils;
 import org.commonjava.mimeparse.MIMEParse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
-import scmspain.karyon.restrouter.handlers.DefaultKaryonErrorHandler;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
+import scmspain.karyon.restrouter.handlers.KaryonRestRouterErrorHandler;
 import scmspain.karyon.restrouter.handlers.RestRouterErrorDTO;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.serializer.SerializeWriter;
@@ -22,6 +26,7 @@ import scmspain.karyon.restrouter.transport.http.Route;
 import scmspain.karyon.restrouter.transport.http.RouteNotFound;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,8 +35,11 @@ import java.util.stream.Stream;
 public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   private SerializeManager serializerManager;
   private RestUriRouter<ByteBuf, ByteBuf> restUriRouter;
-  private DefaultKaryonErrorHandler defaultKaryonErrorHandler = new DefaultKaryonErrorHandler();
+  private KaryonRestRouterErrorHandler karyonRestRouterErrorHandler = new KaryonRestRouterErrorHandler();
   private ErrorHandler<ByteBuf> errorHandler;
+
+  private static final Logger L = LoggerFactory.getLogger(RestRouterHandler.class);
+
 
   /**
    * Creates an instance
@@ -87,9 +95,38 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
     }
 
-    return result;
+    return result.onErrorResumeNext(throwable -> {
+      response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+
+      logError(throwable, request);
+
+      return Observable.empty();
+    });
   }
 
+  private void logError(Throwable throwable, HttpServerRequest<ByteBuf> request) {
+    try {
+      HttpMethod method = request.getHttpMethod();
+      String methodStr = method != null ? method.name() : "<Unknown>";
+      String path = request.getPath() + "?" + request.getQueryString();
+
+      String requestHeaders = getRequestHeaders(request);
+
+      String message = String.format("Internal server error requesting [%s %s] [HEADERS=> %s]", methodStr, path, requestHeaders);
+
+      L.error(message, throwable);
+    } catch (Throwable t) {
+      // Just to be sure we don't generate additional errors
+      L.error("Internal server error", throwable);
+    }
+  }
+
+  private String getRequestHeaders(HttpServerRequest<ByteBuf> request) {
+    return request.getHeaders().entries().stream()
+        .map(entry -> entry.getKey() + ": " + entry.getValue())
+        .reduce((entry1, entry2) -> entry1 + ", " + entry2)
+        .orElse("");
+  }
 
   private Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route,
                                           HttpServerRequest<ByteBuf> request,
@@ -122,7 +159,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
     // If RouteNotFound is not handle it will be handled here
     resultObs = resultObs.onErrorResumeNext(throwable -> {
-      return defaultKaryonErrorHandler.handleError(request, throwable, response::setStatus);
+      return karyonRestRouterErrorHandler.handleError(request, throwable, response::setStatus);
     });
 
     Serializer serializer = serializerManager.getSerializer(contentType)
@@ -142,7 +179,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
         .process(request, response);
 
     resultObs = resultObs.onErrorResumeNext(throwable -> {
-      return defaultKaryonErrorHandler.handleError(request, throwable, response::setStatus)
+      return karyonRestRouterErrorHandler.handleError(request, throwable, response::setStatus)
           .map(this::serializeErrorDto)
           .flatMap(response::writeStringAndFlush);
     });

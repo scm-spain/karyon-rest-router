@@ -84,13 +84,13 @@ public class RestRouterScanner {
       }
 
       if(!serializeManager.getSupportedMediaTypes().containsAll(produces)) {
-        RuntimeException e = new RuntimeException("Existe una route con produces y no hay serializacion para alguno de los media types");
+        RuntimeException e = new RuntimeException("Exists a route with a produces that cannot be handle");
         logger.error("error", e);
         throw e;
       }
 
       if(!produces.isEmpty() && custom) {
-        RuntimeException e = new RuntimeException("Route con produces y custom");
+        RuntimeException e = new RuntimeException("There is a route which is not serializable annotated with produce");
         logger.error("error", e);
         throw e;
       }

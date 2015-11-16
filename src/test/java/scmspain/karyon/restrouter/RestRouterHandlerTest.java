@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.netty.protocol.http.server.HttpRequestHeaders;
 import io.reactivex.netty.protocol.http.server.HttpResponseHeaders;
@@ -370,6 +371,8 @@ public class RestRouterHandlerTest {
     given(routeHandler.process(request, response))
         .willReturn(Observable.error(new RuntimeException("test")));
 
+    given(request.getHttpMethod())
+        .willReturn(HttpMethod.GET);
 
     // When
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
@@ -377,14 +380,12 @@ public class RestRouterHandlerTest {
 
     responseBody.subscribe(subscriber);
 
-    List<Throwable> throwableList = subscriber.getOnErrorEvents();
-
     // Then
+    subscriber.assertNoErrors();
     verify(routeHandler).process(request, response);
     verify(serializer, never()).serialize(any(), any());
     verify(response.getHeaders(), never()).setHeader(any(), any());
-
-    assertThat(throwableList, hasItem(Matchers.isA(RuntimeException.class)));
+    verify(response).setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
   }
 
   @Test
