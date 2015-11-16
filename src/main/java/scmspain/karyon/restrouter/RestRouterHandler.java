@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
-import scmspain.karyon.restrouter.handlers.KaryonRestRouterErrorHandler;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
+import scmspain.karyon.restrouter.handlers.KaryonRestRouterErrorHandler;
 import scmspain.karyon.restrouter.handlers.RestRouterErrorDTO;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.serializer.SerializeWriter;
@@ -26,6 +26,7 @@ import scmspain.karyon.restrouter.transport.http.Route;
 import scmspain.karyon.restrouter.transport.http.RouteNotFound;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -107,8 +108,11 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     try {
       HttpMethod method = request.getHttpMethod();
       String methodStr = method != null ? method.name() : "<Unknown>";
-      String path = request.getPath();
-      String message = String.format("Internal server error requesting [%s %s]", methodStr, path);
+      String path = request.getPath() + "?" + request.getQueryString();
+
+      String requestHeaders = getRequestHeaders(request);
+
+      String message = String.format("Internal server error requesting [%s %s] [HEADERS=> %s]", methodStr, path, requestHeaders);
 
       L.error(message, throwable);
     } catch (Throwable t) {
@@ -117,6 +121,12 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     }
   }
 
+  private String getRequestHeaders(HttpServerRequest<ByteBuf> request) {
+    return request.getHeaders().entries().stream()
+        .map(entry -> entry.getKey() + ": " + entry.getValue())
+        .reduce((entry1, entry2) -> entry1 + ", " + entry2)
+        .orElse("");
+  }
 
   private Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route,
                                           HttpServerRequest<ByteBuf> request,
