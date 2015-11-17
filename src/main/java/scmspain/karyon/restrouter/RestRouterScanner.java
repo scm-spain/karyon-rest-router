@@ -131,12 +131,10 @@ public class RestRouterScanner {
   }
 
   private Set<Class<?>> getEndpointClasses(ResourceLoader resourceLoader) {
-    List<String> stringList = Arrays.asList(ConfigurationManager.getConfigInstance().getStringArray(BASE_PACKAGE_PROPERTY));
+    List<String> packagesList = Arrays.asList(ConfigurationManager.getConfigInstance().getStringArray(BASE_PACKAGE_PROPERTY));
     Set<Class<?>> annotatedTypes = new HashSet<>();
 
-    for (String packageName : stringList) {
-      annotatedTypes.addAll(resourceLoader.find(packageName.trim(), Endpoint.class));
-    }
+    packagesList.stream().forEach(packageName -> annotatedTypes.addAll(resourceLoader.find(packageName.trim(), Endpoint.class)));
 
     return annotatedTypes;
   }
