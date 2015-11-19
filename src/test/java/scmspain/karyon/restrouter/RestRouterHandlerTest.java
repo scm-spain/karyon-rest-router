@@ -11,10 +11,11 @@ import io.reactivex.netty.protocol.http.server.HttpRequestHeaders;
 import io.reactivex.netty.protocol.http.server.HttpResponseHeaders;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import rx.Observable;
 import rx.observers.TestSubscriber;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
@@ -29,12 +30,9 @@ import scmspain.karyon.restrouter.transport.http.RouteHandler;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -100,8 +98,9 @@ public class RestRouterHandlerTest {
     given(serializerManager.getSupportedMediaTypes())
         .willReturn(ImmutableSet.of());
 
-//    given(serializerManager.getErrorHandler())
-//        .willReturn(errorHandler);
+    ArgumentCaptor<Throwable> throwableArgumentCaptor = ArgumentCaptor.forClass(Throwable.class);
+    given(errorHandler.handleError(eq(request), throwableArgumentCaptor.capture(), any()))
+        .willAnswer(invocation -> Observable.error(throwableArgumentCaptor.getValue()));
 
   }
 
@@ -117,6 +116,9 @@ public class RestRouterHandlerTest {
     }
     given(serializerManager.getSupportedMediaTypes())
         .willReturn(Sets.newHashSet(supported));
+
+    given(serializerManager.hasSerializers())
+        .willReturn(true);
   }
 
   private void setProduces(String... produces) {
@@ -258,10 +260,11 @@ public class RestRouterHandlerTest {
     responseBody.subscribe(subscriber);
 
     // Then
+    subscriber.assertNoErrors();
     subscriber.assertReceivedOnNext(Collections.emptyList());
     verify(errorHandler).handleError(eq(request), isA(CannotSerializeException.class), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-
+    verify(response).setStatus(HttpResponseStatus.NOT_ACCEPTABLE);
   }
 
   // 14
@@ -564,6 +567,47 @@ public class RestRouterHandlerTest {
     verify(routeHandler).process(request, response);
     verify(serializer).serialize(eq(resultBody), any());
     verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "text/xml");
+  }
+
+  @Test
+  public void givenSomeSerializerWhenRouteIsNotFoundItShouldReturnSet404StatusCode() {
+    // Given
+    setAccept("text/*, application/json");
+    setSupportedContents("text/xml", "application/json");
+    setCustomRoute(false);
+
+    given(restUriRouter.findBestMatch(request, response))
+        .willReturn(Optional.empty());
+
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
+
+    // When
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    verify(response).setStatus(HttpResponseStatus.NOT_FOUND);
+  }
+
+  @Test
+  public void givenAHandlerWithoutSerializersWhenRouteIsNotFoundItShouldReturnSet404StatusCode() {
+    // Given
+    setAccept("text/*, text/json");
+    setCustomRoute(false);
+
+    given(restUriRouter.findBestMatch(request, response))
+        .willReturn(Optional.empty());
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    verify(response).setStatus(HttpResponseStatus.NOT_FOUND);
+
   }
 
 }

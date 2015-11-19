@@ -32,11 +32,13 @@ public class SerializeManager {
   }
 
   @Inject
-  private void validate() {
-    getSerializer(defaultContentType)
-        .orElseThrow(() ->
-          new RuntimeException("There is no serializer configured for the default content type")
-    );
+  void validate() {
+    if(hasSerializers()) {
+      getSerializer(defaultContentType)
+          .orElseThrow(() ->
+              new RuntimeException("There is no serializer configured for the default content type")
+          );
+    }
   }
 
   private void setSerializers(List<Serializer> serializers) {
@@ -70,6 +72,10 @@ public class SerializeManager {
    */
   public Optional<Serializer> getSerializer(String contentType) {
     return Optional.ofNullable(serializers.get(contentType));
+  }
+
+  public boolean hasSerializers() {
+    return !serializers.isEmpty();
   }
 
 }
