@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import rx.Observable;
 import scmspain.karyon.restrouter.annotation.Endpoint;
@@ -16,6 +17,8 @@ import scmspain.karyon.restrouter.annotation.Produces;
 import scmspain.karyon.restrouter.core.MethodParameterResolver;
 import scmspain.karyon.restrouter.core.ResourceLoader;
 import scmspain.karyon.restrouter.core.URIParameterParser;
+import scmspain.karyon.restrouter.dummy.DummyController;
+import scmspain.karyon.restrouter.endpoint.ExampleEndpointController;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 
 import java.util.Collection;
@@ -26,6 +29,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -167,6 +171,23 @@ public class RestRouterScannerTest {
     verify(restUriRouter).addUriRegex(any(), any(), any(), any(), eq(true), any());
   }
 
+  @Test
+  public void givenScanPropertyWithTwoPackagesWhenScanningThenHitsInTwoPackages() throws Exception {
+    given(resourceLoader.find(eq("scmspain.karyon.restrouter.endpoint"), eq(Endpoint.class)))
+      .willReturn(Sets.newHashSet(ExampleEndpointController.class));
+
+    given(resourceLoader.find(eq("scmspain.karyon.restrouter.dummy"), eq(Endpoint.class)))
+      .willReturn(Sets.newHashSet(DummyController.class));
+
+    new RestRouterScanner(injector, parameterParser,
+        rmParameterInjector, resourceLoader, restUriRouter);
+
+    verify(restUriRouter, atLeastOnce()).addUriRegex(
+            Matchers.contains("ExampleEndpointController"), any(), any(), any(), eq(true), any());
+
+    verify(restUriRouter, atLeastOnce()).addUriRegex(
+            Matchers.contains("DummyController"), any(), any(), any(), eq(true), any());
+  }
 
   @Endpoint
   static class WithoutPathsAndMethods {
