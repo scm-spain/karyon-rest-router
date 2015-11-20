@@ -26,7 +26,6 @@ import scmspain.karyon.restrouter.transport.http.Route;
 import scmspain.karyon.restrouter.transport.http.RouteNotFound;
 
 import javax.inject.Inject;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -86,7 +85,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
         .orElse(new RouteNotFound<>());
     Observable<Void> result;
 
-    if (route.isCustomSerialization() || !serializerManager.hasSerializers()) {
+    if (route.hasCustomSerialization() || !serializerManager.hasSerializers()) {
       result = handleCustomSerialization(route, request, response);
 
     } else {
@@ -131,21 +130,31 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   private Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route,
                                           HttpServerRequest<ByteBuf> request,
                                           HttpServerResponse<ByteBuf> response) {
-    Observable<Object> resultObs;
-    Optional<String> negotiatedContentType;
     Set<String> supportedContentTypes = getSupportedContentTypes(route);
+    String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
+    Optional<String> negotiatedContentType;
+    String contentType;
+    Observable<Object> resultObs;
 
     try {
-      negotiatedContentType = Optional.of(acceptNegotiation(request, supportedContentTypes));
-      resultObs = route.getHandler().process(request, response);
+      validateAcceptHeader(accept);
 
-    } catch (CannotSerializeException | InvalidAcceptHeaderException e) {
+      negotiatedContentType = acceptNegotiation(accept, supportedContentTypes);
+
+      if(negotiatedContentType.isPresent()) {
+        resultObs = route.getHandler().process(request, response);
+      } else {
+        resultObs = Observable.error(
+            new CannotSerializeException("Supported content types " + supportedContentTypes)
+        );
+      }
+
+    } catch (InvalidAcceptHeaderException e) {
       resultObs = Observable.error(e);
       negotiatedContentType = Optional.empty();
     }
 
-    String contentType = negotiatedContentType
-        .orElseGet(serializerManager::getDefaultContentType);
+    contentType = negotiatedContentType.orElseGet(serializerManager::getDefaultContentType);
 
     resultObs = resultObs.onErrorResumeNext(throwable -> {
           if (errorHandler != null) {
@@ -179,6 +188,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
         .process(request, response);
 
     resultObs = resultObs.onErrorResumeNext(throwable -> {
+
       return karyonRestRouterErrorHandler.handleError(request, throwable, response::setStatus)
           .map(this::serializeErrorDto)
           .flatMap(response::writeStringAndFlush);
@@ -187,7 +197,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     return resultObs.cast(Void.class);
   }
 
-  private String serializeErrorDto(RestRouterErrorDTO errorDTO) {
+  private String plainErrorDtoSerialization(RestRouterErrorDTO errorDTO) {
     return "{\"description\":\"" + errorDTO.getDescription() + "\",\"timestamp\":\"" + errorDTO.getTimestamp() + "\"}";
 
   }
@@ -203,56 +213,51 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   }
 
 
-  private String acceptNegotiation(HttpServerRequest<ByteBuf> request,
+  private Optional<String> acceptNegotiation(String accept,
                                    Set<String> supportedContentTypes) {
-
-    String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
 
     if (StringUtils.isBlank(accept)) {
       if (supportedContentTypes.contains(this.serializerManager.getDefaultContentType())) {
-        return this.serializerManager.getDefaultContentType();
+        return Optional.of(serializerManager.getDefaultContentType());
       }
 
-      switch (supportedContentTypes.size()) {
-        case 0:
-          throw new CannotSerializeException("Cannot determine the content-type to serialize");
-
-        case 1:
-          return supportedContentTypes.stream().findFirst().get();
-
-        default:
-          throw new CannotSerializeException("Cannot determine the content-type to serialize between: " + supportedContentTypes);
+      // If only one is supported we will use this
+      if (supportedContentTypes.size() == 1) {
+        return supportedContentTypes.stream().findFirst();
+      } else {
+        // Otherwise we cannot choose objectively which
+        return Optional.empty();
       }
+
     } else {
       return getSerializerContentType(accept, supportedContentTypes);
     }
 
   }
 
-  private String getSerializerContentType(String acceptHeader, Set<String> supportedContentTypes) {
-    validateAcceptValue(acceptHeader);
-
-
+  private Optional<String> getSerializerContentType(String acceptHeader, Set<String> supportedContentTypes) {
     String serializeContentType = MIMEParse.bestMatch(supportedContentTypes, acceptHeader);
     if (StringUtils.isBlank(serializeContentType)) {
-      throw new CannotSerializeException("Cannot serialize with the given content type: " + acceptHeader);
+      return Optional.empty();
     }
 
-    return serializeContentType;
+    return Optional.of(serializeContentType);
   }
 
-  private void validateAcceptValue(String acceptHeaderValue) {
-    String[] mediaTypesStr = acceptHeaderValue.split(",");
+  private void validateAcceptHeader(String acceptHeaderValue) {
+    if(acceptHeaderValue != null) {
+      String[] mediaTypesStr = acceptHeaderValue.split(",");
 
-    try {
-      Stream.of(mediaTypesStr)
-          .map(String::trim)
-          .map(MediaType::parse)
-          .collect(Collectors.toList());
+      try {
+        Stream.of(mediaTypesStr)
+            .map(String::trim)
+            .map(MediaType::parse)
+            .collect(Collectors.toList());
 
 
-    } catch (IllegalArgumentException e) {
-      throw new InvalidAcceptHeaderException(e);
+      } catch (IllegalArgumentException e) {
+        throw new InvalidAcceptHeaderException(e);
+      }
     }
   }
 }

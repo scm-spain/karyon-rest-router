@@ -41,7 +41,7 @@ public class Route<I, O> {
     return produces;
   }
 
-  public boolean isCustomSerialization() {
+  public boolean hasCustomSerialization() {
     return customSerialization;
   }
 

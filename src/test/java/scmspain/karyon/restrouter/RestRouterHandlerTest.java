@@ -15,7 +15,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import rx.Observable;
 import rx.observers.TestSubscriber;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
@@ -37,6 +36,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -133,7 +133,7 @@ public class RestRouterHandlerTest {
   }
 
   private void setCustomRoute(boolean isCustom) {
-    given(route.isCustomSerialization())
+    given(route.hasCustomSerialization())
         .willReturn(isCustom);
   }
 
@@ -611,6 +611,33 @@ public class RestRouterHandlerTest {
     // Then
     verify(response).setStatus(HttpResponseStatus.NOT_FOUND);
 
+  }
+
+  @Test
+  public void givenARouteCustomInAHandlerWithSerializersWhenAnExceptionIsThrownItShouldBeSerialized() {
+    // Given
+    setAccept("text/*, application/json");
+    setCustomRoute(true);
+
+    setSupportedContents("text/plain", "application/xml", "application/json");
+
+    Object errorDTO = mock(Object.class);
+
+    given(routeHandler.process(request, response))
+        .willReturn(Observable.error(new RuntimeException()));
+
+    given(errorHandler.handleError(eq(request), any(), any()))
+        .willAnswer(invocation -> Observable.just(errorDTO));
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    verify(serializerManager).getSerializer("application/json");
+    verify(serializer).serialize(eq(errorDTO), any());
   }
 
 }
