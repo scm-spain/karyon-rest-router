@@ -40,7 +40,6 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
   private static final Logger L = LoggerFactory.getLogger(RestRouterHandler.class);
 
-
   /**
    * Creates an instance
    * @param restUriRouter the rest uri router
@@ -87,7 +86,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
         .orElse(new RouteNotFound<>());
     Observable<Void> result;
 
-    if (route.isCustomSerialization()) {
+    if (route.isCustomSerialization() || !serializerManager.hasSerializers()) {
       result = handleCustomSerialization(route, request, response);
 
     } else {
