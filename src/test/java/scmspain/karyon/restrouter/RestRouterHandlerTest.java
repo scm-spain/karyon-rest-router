@@ -98,6 +98,9 @@ public class RestRouterHandlerTest {
     given(serializerManager.getSupportedMediaTypes())
         .willReturn(ImmutableSet.of());
 
+    given(response.writeStringAndFlush(any()))
+        .willReturn(Observable.empty());
+
     ArgumentCaptor<Throwable> throwableArgumentCaptor = ArgumentCaptor.forClass(Throwable.class);
     given(errorHandler.handleError(eq(request), throwableArgumentCaptor.capture(), any()))
         .willAnswer(invocation -> Observable.error(throwableArgumentCaptor.getValue()));

@@ -99,7 +99,8 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
       logError(throwable, request);
 
-      return Observable.empty();
+      response.getHeaders().set(HttpHeaders.CONTENT_TYPE, "text/plain");
+      return response.writeStringAndFlush("Internal server error");
     });
   }
 
