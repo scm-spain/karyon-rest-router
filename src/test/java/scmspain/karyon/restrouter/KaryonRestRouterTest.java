@@ -2,8 +2,9 @@ package scmspain.karyon.restrouter;
 
 
 import com.netflix.governator.guice.BootstrapModule;
-import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
+import com.netflix.hystrix.HystrixObservableCommand;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.EmptyByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -12,12 +13,14 @@ import io.reactivex.netty.protocol.http.client.HttpClientRequest;
 import java.nio.charset.Charset;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import netflix.karyon.Karyon;
 import netflix.karyon.KaryonServer;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import rx.Observable;
 import scmspain.karyon.restrouter.core.AppServer;
 
 public class KaryonRestRouterTest {
@@ -254,25 +257,27 @@ public class KaryonRestRouterTest {
     // This request is wrapper in a Hystrix command because, since /hystrix.stream does not send
     // response's headers until it send the first byte, and to do so need some metrics to exists,
     // it needs any Hystrix command to be executed to start the stream.
-    new HystrixCommand<String>(HystrixCommandGroupKey.Factory.asKey("request")) {
+    new HystrixObservableCommand<HttpClientResponse<ByteBuf>>(HystrixCommandGroupKey.Factory.asKey("request")) {
       @Override
-      protected String run() throws Exception {
+      protected Observable<HttpClientResponse<ByteBuf>> construct() {
         return RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
-          .submit(HttpClientRequest.createGet("/hystrix.stream"))
-          .flatMap(response -> {
-            Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
-            return response.getContent().map(content -> content.toString(Charset.defaultCharset()));
-          })
-          .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
+          .submit(HttpClientRequest.createGet("/example/1"));
       }
+    }.construct().map(this::callToHystrixStreamEndpoint);
+  }
 
-      @Override
-      protected String getFallback() {
-        // Fallback means the requests failed, so this mark the tests as failed too.
-        Assert.fail("/hystrix.stream was not reachable.");
-        return "";
-      }
-    };
+  private String callToHystrixStreamEndpoint(HttpClientResponse<ByteBuf> any) throws RuntimeException {
+    try {
+      return RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
+        .submit(HttpClientRequest.createGet("/hystrix.stream"))
+        .flatMap(response -> {
+          Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
+          return response.getContent().map(content -> content.toString(Charset.defaultCharset()));
+        })
+        .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
 }
