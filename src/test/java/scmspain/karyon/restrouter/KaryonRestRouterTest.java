@@ -2,6 +2,8 @@ package scmspain.karyon.restrouter;
 
 
 import com.netflix.governator.guice.BootstrapModule;
+import com.netflix.hystrix.HystrixCommand;
+import com.netflix.hystrix.HystrixCommandGroupKey;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.EmptyByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -244,6 +246,33 @@ public class KaryonRestRouterTest {
             .toBlocking().first();
 
     Assert.assertEquals("{\"value\":\"1\"}", body);
+  }
+
+  @Test
+  public void testHystrixStreamEndpointReturnsOk() throws Exception {
+
+    // This request is wrapper in a Hystrix command because, since /hystrix.stream does not send
+    // response's headers until it send the first byte, and to do so need some metrics to exists,
+    // it needs any Hystrix command to be executed to start the stream.
+    new HystrixCommand<String>(HystrixCommandGroupKey.Factory.asKey("request")) {
+      @Override
+      protected String run() throws Exception {
+        return RxNetty.createHttpClient("localhost", AppServer.KaryonRestRouterModuleImpl.DEFAULT_PORT)
+          .submit(HttpClientRequest.createGet("/hystrix.stream"))
+          .flatMap(response -> {
+            Assert.assertEquals(HttpResponseStatus.OK.code(), response.getStatus().code());
+            return response.getContent().map(content -> content.toString(Charset.defaultCharset()));
+          })
+          .toBlocking().toFuture().get(10, TimeUnit.SECONDS);
+      }
+
+      @Override
+      protected String getFallback() {
+        // Fallback means the requests failed, so this mark the tests as failed too.
+        Assert.fail("/hystrix.stream was not reachable.");
+        return "";
+      }
+    };
   }
 
 }
