@@ -2,6 +2,7 @@ package scmspain.karyon.restrouter;
 
 
 import com.google.common.base.Predicates;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toSet;
 import static org.reflections.ReflectionUtils.getAllMethods;
 import static org.reflections.ReflectionUtils.withAnnotation;
 import static org.reflections.ReflectionUtils.withModifier;
@@ -132,14 +134,18 @@ public class RestRouterScanner {
 
   private Set<Class<?>> getEndpointClasses(ResourceLoader resourceLoader) {
     List<String> packagesList = Arrays.asList(ConfigurationManager.getConfigInstance().getStringArray(BASE_PACKAGE_PROPERTY));
-    Set<Class<?>> annotatedTypes = new HashSet<>();
 
-    packagesList.stream().forEach(packageName -> annotatedTypes.addAll(resourceLoader.find(packageName.trim(), Endpoint.class)));
+    if(packagesList.isEmpty()) {
+      packagesList = Collections.singletonList("");
+    }
 
-    return annotatedTypes;
+    return packagesList.stream()
+          .map(String::trim)
+          .map(packageName -> resourceLoader.find(packageName, Endpoint.class))
+          .reduce(new HashSet<>(), Sets::union);
   }
 
-    private void configurePath(PathDefinition pathDefinition) {
+  private void configurePath(PathDefinition pathDefinition) {
     Method method = pathDefinition.method;
 
     boolean isCustomSerialization = isCustom(method);
@@ -154,8 +160,6 @@ public class RestRouterScanner {
         .orElse(Collections.emptyList());
 
     String uriRegex = parameterParser.getUriRegex(pathDefinition.uri);
-
-
 
     String name = pathDefinition.klass.getName() + "." + method.getName();
 
