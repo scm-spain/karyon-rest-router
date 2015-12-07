@@ -2,6 +2,8 @@ package scmspain.karyon.restrouter;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Injector;
+import com.netflix.config.ConcurrentCompositeConfiguration;
+import com.netflix.config.ConfigurationManager;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.configuration.AbstractConfiguration;
 import org.junit.Before;
@@ -23,6 +25,9 @@ import scmspain.karyon.restrouter.transport.http.RestUriRouter;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -51,10 +56,54 @@ public class RestRouterScannerTest {
   @Captor
   ArgumentCaptor<Collection<String>> producesCaptor;
 
-
   @Before
   public void setUp() {
     initMocks(this);
+  }
+
+  private synchronized void doWithPackageConfig(Runnable runnable) {
+    doWithPackageConfig("", runnable);
+  }
+
+  /**
+   * <p>
+   *  This high order function runs some code after mocking the static Archaius configuration to
+   *  return the value expected as package configuration. When It's finish it tries to leave the
+   *  Archaius state the same as previously.
+   * </p>
+   * <p>
+   *  This function needs to be synchronized to be "thread safe", but it's really only threadsafe
+   *  in terms of this test, as if someone plays with Archaius configuration on another thread the
+   *  behavior is warranted to be very funny.
+   * </p>
+   * <p>
+   *   Unfortunately this is a clear example of what happens when you use static values.
+   * </p>
+   *
+   * @param packagePropertyValue the value you want to be returned as package scan
+   * {@link RestRouterScanner#BASE_PACKAGE_PROPERTY}
+   * @param runnable the piece of code to be executed with this scenario
+   * @throws RuntimeException if it doesn't know how to mock Archaius
+   */
+  private synchronized void doWithPackageConfig(String packagePropertyValue, Runnable runnable) {
+    AbstractConfiguration abstractConfiguration = ConfigurationManager.getConfigInstance();
+
+    if(abstractConfiguration instanceof ConcurrentCompositeConfiguration) {
+      ConcurrentCompositeConfiguration config = (ConcurrentCompositeConfiguration)abstractConfiguration;
+
+      Map<String, AbstractConfiguration> oldConfigMap = config.getConfigurationNames()
+          .stream()
+          .collect(Collectors.toMap(Function.identity(), name -> (AbstractConfiguration)config.getConfiguration(name)));
+
+      config.setProperty(RestRouterScanner.BASE_PACKAGE_PROPERTY, packagePropertyValue);
+
+      runnable.run();
+
+      oldConfigMap.entrySet().forEach(entry -> config.addConfiguration(entry.getValue(), entry.getKey()));
+
+    } else {
+      throw new RuntimeException("I don't know how to mock this, implement me (static hater)");
+    }
   }
 
   @Test
@@ -64,8 +113,10 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(WithoutPathsAndMethods.class));
 
     // When
-    new RestRouterScanner(injector, parameterParser,
-                rmParameterInjector, resourceLoader, restUriRouter);
+    doWithPackageConfig("something", () ->
+      new RestRouterScanner(injector, parameterParser,
+                  rmParameterInjector, resourceLoader, restUriRouter)
+    );
 
     // Then
     verify(restUriRouter, never()).addUriRegex(any(), any(), any(), any(), eq(true), any());
@@ -78,8 +129,10 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(WithoutPaths.class));
 
     // When
-    new RestRouterScanner(injector, parameterParser,
-        rmParameterInjector, resourceLoader, restUriRouter);
+    doWithPackageConfig(() ->
+        new RestRouterScanner(injector, parameterParser,
+        rmParameterInjector, resourceLoader, restUriRouter)
+    );
 
     // Then
     verify(restUriRouter, never()).addUriRegex(any(), any(), any(), any(), eq(true), any());
@@ -92,8 +145,10 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(With2Paths.class));
 
     // When
-    new RestRouterScanner(injector, parameterParser,
-        rmParameterInjector, resourceLoader, restUriRouter);
+    doWithPackageConfig(() ->
+      new RestRouterScanner(injector, parameterParser,
+          rmParameterInjector, resourceLoader, restUriRouter)
+    );
 
     // Then
     verify(restUriRouter, times(2)).addUriRegex(any(), any(), any(), any(), eq(true), any());
@@ -106,8 +161,10 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(WithoutProduces.class));
 
     // When
-    new RestRouterScanner(injector, parameterParser,
-        rmParameterInjector, resourceLoader, restUriRouter);
+    doWithPackageConfig(() ->
+      new RestRouterScanner(injector, parameterParser,
+          rmParameterInjector, resourceLoader, restUriRouter)
+    );
 
     // Then
     verify(restUriRouter).addUriRegex(any(), any(), any(), eq(Collections.emptyList()), eq(true), any());
@@ -120,8 +177,10 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(With1ProducesTextPlain.class));
 
     // When
-    new RestRouterScanner(injector, parameterParser,
-        rmParameterInjector, resourceLoader, restUriRouter);
+    doWithPackageConfig(() ->
+      new RestRouterScanner(injector, parameterParser,
+          rmParameterInjector, resourceLoader, restUriRouter)
+    );
 
     // Then
     verify(restUriRouter).addUriRegex(any(), any(), any(), producesCaptor.capture(), eq(true), any());
@@ -137,8 +196,10 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(DefaultEndpoint.class));
 
     // When
-    new RestRouterScanner(injector, parameterParser,
-        rmParameterInjector, resourceLoader, restUriRouter);
+    doWithPackageConfig(() ->
+      new RestRouterScanner(injector, parameterParser,
+          rmParameterInjector, resourceLoader, restUriRouter)
+    );
 
     // Then
     verify(restUriRouter).addUriRegex(any(), any(), any(), any(), eq(true), any());
@@ -164,8 +225,10 @@ public class RestRouterScannerTest {
         .willReturn(Sets.newHashSet(CustomMethodSerialization.class));
 
     // When
-    new RestRouterScanner(injector, parameterParser,
-        rmParameterInjector, resourceLoader, restUriRouter);
+    doWithPackageConfig(() ->
+      new RestRouterScanner(injector, parameterParser,
+          rmParameterInjector, resourceLoader, restUriRouter)
+    );
 
     // Then
     verify(restUriRouter).addUriRegex(any(), any(), any(), any(), eq(true), any());
@@ -179,8 +242,10 @@ public class RestRouterScannerTest {
     given(resourceLoader.find(eq("scmspain.karyon.restrouter.dummy"), eq(Endpoint.class)))
       .willReturn(Sets.newHashSet(DummyController.class));
 
-    new RestRouterScanner(injector, parameterParser,
-        rmParameterInjector, resourceLoader, restUriRouter);
+    doWithPackageConfig("scmspain.karyon.restrouter.endpoint,scmspain.karyon.restrouter.dummy", () ->
+      new RestRouterScanner(injector, parameterParser,
+          rmParameterInjector, resourceLoader, restUriRouter)
+    );
 
     verify(restUriRouter, atLeastOnce()).addUriRegex(
             Matchers.contains("ExampleEndpointController"), any(), any(), any(), eq(true), any());
