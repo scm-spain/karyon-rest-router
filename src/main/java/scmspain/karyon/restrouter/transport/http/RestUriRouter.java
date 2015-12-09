@@ -3,6 +3,8 @@ package scmspain.karyon.restrouter.transport.http;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import netflix.karyon.transport.http.HttpKeyEvaluationContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import scmspain.karyon.restrouter.exception.RouteNotFoundException;
 
@@ -14,6 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @Singleton
 public class RestUriRouter<I, O> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RestUriRouter.class);
 
   private final CopyOnWriteArrayList<Route<I,O>> routes;
 
@@ -45,7 +48,11 @@ public class RestUriRouter<I, O> {
     EnhancedRegexUriConstraintKey<I> interceptorKey =
         new EnhancedRegexUriConstraintKey<>(uriRegEx, verb);
 
-    routes.add(new Route<>(name, interceptorKey, produces, custom, handler));
+    Route<I, O> route = new Route<>(name, interceptorKey, produces, custom, handler);
+
+    routes.add(route);
+
+    LOGGER.info(String.format("Route registered [%s|%s|%s]", verb, uriRegEx, route.getName()));
 
     return this;
   }

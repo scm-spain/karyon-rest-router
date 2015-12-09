@@ -31,18 +31,16 @@ public interface AppServer {
       server()
           .port(DEFAULT_PORT)
           .threadPoolSize(DEFAULT_THREADS_POOL_SIZE);
-
-
-      this.setConfiguration(Configuration.builder()
-              .defaultContentType("application/json")
-              .addSerializer(new JsonSerializer())
-              .build()
-      );
-
     }
 
     @Override
     public void configure() {
+      setConfiguration(Configuration.builder()
+          .defaultContentType("application/json")
+          .addSerializer(new JsonSerializer())
+          .build()
+      );
+
       bind(ExampleEndpointController.class);
       super.configure();
     }
