@@ -136,12 +136,16 @@ public class RestRouterScanner {
     List<String> packagesList = Arrays.asList(ConfigurationManager.getConfigInstance().getStringArray(BASE_PACKAGE_PROPERTY));
 
     if(packagesList.isEmpty()) {
+      logger.info("packages to scan: empty");
       packagesList = Collections.singletonList("");
     }
 
     return packagesList.stream()
           .map(String::trim)
-          .map(packageName -> resourceLoader.find(packageName, Endpoint.class))
+          .map(packageName -> {
+            logger.info("Scanning package: {}", packageName);
+            return resourceLoader.find(packageName, Endpoint.class);
+          })
           .reduce(new HashSet<>(), Sets::union);
   }
 
