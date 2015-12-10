@@ -62,7 +62,8 @@ public abstract class KaryonRestRouterModule extends KaryonHttpModule<ByteBuf, B
     })
         .toProvider(errorHandlerProvider);
 
-    bindRouter().to(RestRouterHandler.class);
+    bind(RestRouterHandler.class);
+    bindRouter().toProvider(RouteHandlerProvider.class);
 
     super.configure();
   }
