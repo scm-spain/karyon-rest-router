@@ -52,6 +52,9 @@ dependencies {
 }
 
 tasks.withType(Test) {
+    minHeapSize = "128m"
+    maxHeapSize = "512m"
+
     testLogging {
         exceptionFormat "full"
     }
