@@ -31,7 +31,7 @@ public class KaryonRestRouterTest {
   public static void setUpBefore() throws Exception {
     server = Karyon.forApplication(AppServer.class, (BootstrapModule[]) null);
     server.start();
-    Thread.sleep(20000);
+    Thread.sleep(60000);
   }
 
   @AfterClass
