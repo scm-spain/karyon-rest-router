@@ -19,8 +19,10 @@ import rx.Observable;
 import rx.observers.TestSubscriber;
 import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
+import scmspain.karyon.restrouter.exception.RouteNotFoundException;
 import scmspain.karyon.restrouter.exception.UnsupportedFormatException;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
+import scmspain.karyon.restrouter.handlers.RestRouterErrorDTO;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.serializer.Serializer;
 import scmspain.karyon.restrouter.transport.http.RestUriRouter;
@@ -618,16 +620,10 @@ public class RestRouterHandlerTest {
     // Given
     setAccept("text/*, application/json");
     setCustomRoute(true);
-
     setSupportedContents("text/plain", "application/xml", "application/json");
 
-    Object errorDTO = mock(Object.class);
-
     given(routeHandler.process(request, response))
-        .willReturn(Observable.error(new RuntimeException()));
-
-    given(errorHandler.handleError(eq(request), any(), any()))
-        .willAnswer(invocation -> Observable.just(errorDTO));
+        .willReturn(Observable.error(new RouteNotFoundException()));
 
     // When
     RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
@@ -637,7 +633,7 @@ public class RestRouterHandlerTest {
 
     // Then
     verify(serializerManager).getSerializer("application/json");
-    verify(serializer).serialize(eq(errorDTO), any());
+    verify(serializer).serialize(any(RestRouterErrorDTO.class), any());
   }
 
 }

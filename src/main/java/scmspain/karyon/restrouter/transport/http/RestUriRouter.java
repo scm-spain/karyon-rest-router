@@ -24,7 +24,7 @@ public class RestUriRouter<I, O> {
     routes = new CopyOnWriteArrayList<>();
   }
 
-  public Observable<Object> handle(HttpServerRequest<I> request, HttpServerResponse<O> response) {
+  public Observable<Object> handle(HttpServerRequest<I> request, HttpServerResponse<O> response) throws RouteNotFoundException {
 
     Optional<Route<I,O>> bestRoute = findBestMatch(request, response);
 

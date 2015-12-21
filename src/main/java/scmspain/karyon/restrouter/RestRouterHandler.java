@@ -2,6 +2,7 @@ package scmspain.karyon.restrouter;
 
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
+import com.sun.javafx.collections.ObservableListWrapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -17,7 +18,6 @@ import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
 import scmspain.karyon.restrouter.handlers.KaryonRestRouterErrorHandler;
-import scmspain.karyon.restrouter.handlers.RestRouterErrorDTO;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.serializer.SerializeWriter;
 import scmspain.karyon.restrouter.serializer.Serializer;
@@ -87,10 +87,8 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
     if (route.hasCustomSerialization() || !serializerManager.hasSerializers()) {
       result = handleCustomSerialization(route, request, response);
-
     } else {
       result = handleSupported(route, request, response);
-
     }
 
     return result.onErrorResumeNext(throwable -> {
@@ -132,29 +130,30 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
                                           HttpServerResponse<ByteBuf> response) {
     Set<String> supportedContentTypes = getSupportedContentTypes(route);
     String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
-    Optional<String> negotiatedContentType;
-    String contentType;
-    Observable<Object> resultObs;
 
     try {
       validateAcceptHeader(accept);
 
-      negotiatedContentType = acceptNegotiation(accept, supportedContentTypes);
+      Optional<String> negotiatedContentType = acceptNegotiation(accept, supportedContentTypes);
 
-      if(negotiatedContentType.isPresent()) {
-        resultObs = route.getHandler().process(request, response);
+      if (negotiatedContentType.isPresent()) {
+        Observable<Object> resultObs = route.getHandler().process(request, response);
+
+        return handleResolvedRequest(request, response, negotiatedContentType.get(), resultObs);
       } else {
-        resultObs = Observable.error(
+        Observable<Object> errorObs = Observable.error(
             new CannotSerializeException("Supported content types " + supportedContentTypes)
         );
+
+        return handleResolvedRequest(request, response, serializerManager.getDefaultContentType(), errorObs);
       }
 
     } catch (InvalidAcceptHeaderException e) {
-      resultObs = Observable.error(e);
-      negotiatedContentType = Optional.empty();
+      return handleResolvedRequest(request, response, serializerManager.getDefaultContentType(), Observable.error(e));
     }
+  }
 
-    contentType = negotiatedContentType.orElseGet(serializerManager::getDefaultContentType);
+  private Observable<Void> handleResolvedRequest(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response, String contentType, Observable<Object> resultObs) {
 
     resultObs = resultObs.onErrorResumeNext(throwable -> {
           if (errorHandler != null) {
@@ -171,8 +170,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
       return karyonRestRouterErrorHandler.handleError(request, throwable, response::setStatus);
     });
 
-    Serializer serializer = serializerManager.getSerializer(contentType)
-        .orElseThrow(() -> new CannotSerializeException("Cannot serialize " + contentType));
+    Serializer serializer = serializerManager.getSerializer(contentType).get();
 
     SerializeWriter writer = new SerializeWriter(response, contentType);
 
@@ -187,19 +185,22 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     Observable<Object> resultObs = route.getHandler()
         .process(request, response);
 
-    resultObs = resultObs.onErrorResumeNext(throwable -> {
-
-      return karyonRestRouterErrorHandler.handleError(request, throwable, response::setStatus)
-          .map(this::serializeErrorDto)
-          .flatMap(response::writeStringAndFlush);
-    });
+    resultObs = resultObs.onErrorResumeNext(throwable -> handleCustomSerializationError(throwable, request, response));
 
     return resultObs.cast(Void.class);
   }
 
-  private String plainErrorDtoSerialization(RestRouterErrorDTO errorDTO) {
-    return "{\"description\":\"" + errorDTO.getDescription() + "\",\"timestamp\":\"" + errorDTO.getTimestamp() + "\"}";
+  private Observable<?> handleCustomSerializationError(Throwable throwable, HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
+      String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
+      String contentType = acceptNegotiation(accept, serializerManager.getSupportedMediaTypes())
+          .orElseGet(serializerManager::getDefaultContentType);
+      SerializeWriter serializeWriter = new SerializeWriter(response, contentType);
 
+      return karyonRestRouterErrorHandler.handleError(request, throwable, response::setStatus)
+          .flatMap(errorDTO ->
+              serializeWriter.write(errorDTO, serializerManager.getSerializer(contentType)
+                  .orElseGet(RestRouterErrorDTOFallbackSerializer::getInstance))
+          );
   }
 
   private Set<String> getSupportedContentTypes(Route<ByteBuf, ByteBuf> route) {
@@ -236,6 +237,10 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   }
 
   private Optional<String> getSerializerContentType(String acceptHeader, Set<String> supportedContentTypes) {
+    if(supportedContentTypes.isEmpty()) {
+      return Optional.empty();
+    }
+    
     String serializeContentType = MIMEParse.bestMatch(supportedContentTypes, acceptHeader);
     if (StringUtils.isBlank(serializeContentType)) {
       return Optional.empty();
@@ -244,7 +249,7 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     return Optional.of(serializeContentType);
   }
 
-  private void validateAcceptHeader(String acceptHeaderValue) {
+  private void validateAcceptHeader(String acceptHeaderValue) throws InvalidAcceptHeaderException {
     if(acceptHeaderValue != null) {
       String[] mediaTypesStr = acceptHeaderValue.split(",");
 
