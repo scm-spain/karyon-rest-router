@@ -24,15 +24,6 @@ public class RestUriRouter<I, O> {
     routes = new CopyOnWriteArrayList<>();
   }
 
-  public Observable<Object> handle(HttpServerRequest<I> request, HttpServerResponse<O> response) throws RouteNotFoundException {
-
-    Optional<Route<I,O>> bestRoute = findBestMatch(request, response);
-
-    return bestRoute
-        .map(r -> r.getHandler().process(request, response))
-            .orElseThrow(RouteNotFoundException::new);
-  }
-
   /**
    * Add a new URI regex -&lt; Handler route to this router.
    *
