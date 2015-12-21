@@ -2,7 +2,6 @@ package scmspain.karyon.restrouter;
 
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import com.sun.javafx.collections.ObservableListWrapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -81,23 +80,25 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   public Observable<Void> handle(HttpServerRequest<ByteBuf> request,
                                  HttpServerResponse<ByteBuf> response) {
 
-    Route<ByteBuf, ByteBuf> route =  restUriRouter.findBestMatch(request, response)
-        .orElse(new RouteNotFound<>());
-    Observable<Void> result;
+    return Observable.defer(() -> {
+      Route<ByteBuf, ByteBuf> route =  restUriRouter.findBestMatch(request, response)
+          .orElse(new RouteNotFound<>());
+      Observable<Void> result;
 
-    if (route.hasCustomSerialization() || !serializerManager.hasSerializers()) {
-      result = handleCustomSerialization(route, request, response);
-    } else {
-      result = handleSupported(route, request, response);
-    }
+      if (route.hasCustomSerialization() || !serializerManager.hasSerializers()) {
+        result = handleCustomSerialization(route, request, response);
+      } else {
+        result = handleSupported(route, request, response);
+      }
 
-    return result.onErrorResumeNext(throwable -> {
-      response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+      return result.onErrorResumeNext(throwable -> {
+        response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
 
-      logError(throwable, request);
+        logError(throwable, request);
 
-      response.getHeaders().set(HttpHeaders.CONTENT_TYPE, "text/plain");
-      return response.writeStringAndFlush("Internal server error");
+        response.getHeaders().set(HttpHeaders.CONTENT_TYPE, "text/plain");
+        return response.writeStringAndFlush("Internal server error");
+      });
     });
   }
 
