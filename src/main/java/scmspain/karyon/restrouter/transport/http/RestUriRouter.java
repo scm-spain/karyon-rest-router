@@ -29,9 +29,10 @@ public class RestUriRouter<I, O> {
    *
    * @param name the name of the route, just for logging purposes
    * @param uriRegEx URI regex to match
-   * @param handler Request handler.
    * @param verb Request verb.
    * @param produces the list of content types the route may return.
+   * @param custom if the response is serialized by the route
+   * @param handler Request handler.
    * @return The updated router.
    */
   public RestUriRouter<I, O> addUriRegex(String name, String uriRegEx, String verb, Collection<String> produces,
@@ -52,6 +53,7 @@ public class RestUriRouter<I, O> {
    * Find the best route for handling a request
    * @param request the request
    * @param response the response
+   * @return the route that handles this request, or empty if it's not handle by any route
    */
   public Optional<Route<I,O>> findBestMatch(HttpServerRequest<I> request, HttpServerResponse<O> response){
     HttpKeyEvaluationContext context = new HttpKeyEvaluationContext(response.getChannel());

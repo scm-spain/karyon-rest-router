@@ -10,7 +10,8 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 
 /**
- * Created by pablo.diaz on 16/12/15.
+ * This Serializer is the last resource to serialize any error but it only knows how to serialize
+ * {@link RestRouterErrorDTO}
  */
 class RestRouterErrorDTOFallbackSerializer extends Serializer {
   private static final Charset CHARSET = Charset.forName("UTF-8");

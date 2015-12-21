@@ -204,8 +204,8 @@ public class RestRouterScanner {
           params,
           queryParams);
 
-
-      return (Observable) method.invoke(injector.getInstance(endpoint.klass), invokeParams);
+      //noinspection unchecked
+      return (Observable<Object>) method.invoke(injector.getInstance(endpoint.klass), invokeParams);
 
     } catch (Throwable e) {
       return Observable.error(e);

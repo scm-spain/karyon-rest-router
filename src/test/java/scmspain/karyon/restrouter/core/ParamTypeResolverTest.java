@@ -53,6 +53,7 @@ public class ParamTypeResolverTest<T> {
     assertEquals(expectedClass, parameterResolver.resolveValueType(type, value).getClass());
   }
 
+  @SuppressWarnings("unchecked")
   @Test(expected = UnsupportedFormatException.class)
   public void itShouldReturnsErrorIfCanNotResolveValueType() throws Exception {
     Class anyUnsupportedClass = Byte.class;
