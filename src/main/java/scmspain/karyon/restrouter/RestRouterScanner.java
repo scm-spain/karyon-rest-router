@@ -76,7 +76,7 @@ public class RestRouterScanner {
 
     for(Route<ByteBuf, ByteBuf> route: routes) {
       Set<String> produces = route.getProduces();
-      boolean custom = route.isCustomSerialization();
+      boolean custom = route.hasCustomSerialization();
 
       if(serializeManager.getSupportedMediaTypes().isEmpty() && !custom) {
         String message = "There isn't serializers configured with a serialized route '" + route.getName() + "'";
@@ -204,8 +204,8 @@ public class RestRouterScanner {
           params,
           queryParams);
 
-
-      return (Observable) method.invoke(injector.getInstance(endpoint.klass), invokeParams);
+      //noinspection unchecked
+      return (Observable<Object>) method.invoke(injector.getInstance(endpoint.klass), invokeParams);
 
     } catch (Throwable e) {
       return Observable.error(e);

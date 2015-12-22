@@ -17,7 +17,6 @@ import scmspain.karyon.restrouter.exception.CannotSerializeException;
 import scmspain.karyon.restrouter.exception.InvalidAcceptHeaderException;
 import scmspain.karyon.restrouter.handlers.ErrorHandler;
 import scmspain.karyon.restrouter.handlers.KaryonRestRouterErrorHandler;
-import scmspain.karyon.restrouter.handlers.RestRouterErrorDTO;
 import scmspain.karyon.restrouter.serializer.SerializeManager;
 import scmspain.karyon.restrouter.serializer.SerializeWriter;
 import scmspain.karyon.restrouter.serializer.Serializer;
@@ -26,7 +25,6 @@ import scmspain.karyon.restrouter.transport.http.Route;
 import scmspain.karyon.restrouter.transport.http.RouteNotFound;
 
 import javax.inject.Inject;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -82,25 +80,25 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   public Observable<Void> handle(HttpServerRequest<ByteBuf> request,
                                  HttpServerResponse<ByteBuf> response) {
 
-    Route<ByteBuf, ByteBuf> route =  restUriRouter.findBestMatch(request, response)
-        .orElse(new RouteNotFound<>());
-    Observable<Void> result;
+    return Observable.defer(() -> {
+      Route<ByteBuf, ByteBuf> route =  restUriRouter.findBestMatch(request, response)
+          .orElse(new RouteNotFound<>());
+      Observable<Void> result;
 
-    if (route.isCustomSerialization() || !serializerManager.hasSerializers()) {
-      result = handleCustomSerialization(route, request, response);
+      if (route.hasCustomSerialization() || !serializerManager.hasSerializers()) {
+        result = handleCustomSerialization(route, request, response);
+      } else {
+        result = handleSupported(route, request, response);
+      }
 
-    } else {
-      result = handleSupported(route, request, response);
+      return result.onErrorResumeNext(throwable -> {
+        response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
 
-    }
+        logError(throwable, request);
 
-    return result.onErrorResumeNext(throwable -> {
-      response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-
-      logError(throwable, request);
-
-      response.getHeaders().set(HttpHeaders.CONTENT_TYPE, "text/plain");
-      return response.writeStringAndFlush("Internal server error");
+        response.getHeaders().set(HttpHeaders.CONTENT_TYPE, "text/plain");
+        return response.writeStringAndFlush("Internal server error");
+      });
     });
   }
 
@@ -131,31 +129,38 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   private Observable<Void> handleSupported(Route<ByteBuf,ByteBuf> route,
                                           HttpServerRequest<ByteBuf> request,
                                           HttpServerResponse<ByteBuf> response) {
-    Observable<Object> resultObs;
-    Optional<String> negotiatedContentType;
     Set<String> supportedContentTypes = getSupportedContentTypes(route);
+    String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
 
     try {
-      negotiatedContentType = Optional.of(acceptNegotiation(request, supportedContentTypes));
-      resultObs = route.getHandler().process(request, response);
+      validateAcceptHeader(accept);
 
-    } catch (CannotSerializeException | InvalidAcceptHeaderException e) {
-      resultObs = Observable.error(e);
-      negotiatedContentType = Optional.empty();
+      Optional<String> negotiatedContentType = acceptNegotiation(accept, supportedContentTypes);
+
+      if (negotiatedContentType.isPresent()) {
+        Observable<Object> resultObs = route.getHandler().process(request, response);
+
+        return handleResolvedRequest(request, response, negotiatedContentType.get(), resultObs);
+      } else {
+        Observable<Object> errorObs = Observable.error(
+            new CannotSerializeException("Supported content types " + supportedContentTypes)
+        );
+
+        return handleResolvedRequest(request, response, serializerManager.getDefaultContentType(), errorObs);
+      }
+
+    } catch (InvalidAcceptHeaderException e) {
+      return handleResolvedRequest(request, response, serializerManager.getDefaultContentType(), Observable.error(e));
     }
+  }
 
-    String contentType = negotiatedContentType
-        .orElseGet(serializerManager::getDefaultContentType);
+  private Observable<Void> handleResolvedRequest(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response, String contentType, Observable<Object> resultObs) {
 
-    resultObs = resultObs.onErrorResumeNext(throwable -> {
-          if (errorHandler != null) {
-            return errorHandler.handleError(request, throwable, response::setStatus);
-
-          } else {
-            return Observable.error(throwable);
-          }
-        }
-    );
+    if(errorHandler != null) {
+      resultObs = resultObs.onErrorResumeNext(throwable ->
+          errorHandler.handleError(request, throwable, response::setStatus)
+      );
+    }
 
     // If RouteNotFound is not handle it will be handled here
     resultObs = resultObs.onErrorResumeNext(throwable -> {
@@ -163,33 +168,30 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
     });
 
     Serializer serializer = serializerManager.getSerializer(contentType)
-        .orElseThrow(() -> new CannotSerializeException("Cannot serialize " + contentType));
+        .orElseGet(RestRouterErrorDTOFallbackSerializer::getInstance);
 
     SerializeWriter writer = new SerializeWriter(response, contentType);
 
     return resultObs.flatMap(result -> writer.write(result, serializer));
   }
 
-
   private Observable<Void> handleCustomSerialization(Route<ByteBuf, ByteBuf> route,
                                                     HttpServerRequest<ByteBuf> request,
                                                     HttpServerResponse<ByteBuf> response) {
 
-    Observable<Object> resultObs = route.getHandler()
-        .process(request, response);
+    Observable<Void> resultObs = route.getHandler()
+        .process(request, response)
+        .cast(Void.class);
 
-    resultObs = resultObs.onErrorResumeNext(throwable -> {
-      return karyonRestRouterErrorHandler.handleError(request, throwable, response::setStatus)
-          .map(this::serializeErrorDto)
-          .flatMap(response::writeStringAndFlush);
-    });
-
-    return resultObs.cast(Void.class);
+    return resultObs.onErrorResumeNext(throwable -> handleCustomSerializationError(throwable, request, response));
   }
 
-  private String serializeErrorDto(RestRouterErrorDTO errorDTO) {
-    return "{\"description\":\"" + errorDTO.getDescription() + "\",\"timestamp\":\"" + errorDTO.getTimestamp() + "\"}";
+  private Observable<Void> handleCustomSerializationError(Throwable throwable, HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
+      String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
+      String contentType = acceptNegotiation(accept, serializerManager.getSupportedMediaTypes())
+          .orElseGet(serializerManager::getDefaultContentType);
 
+      return handleResolvedRequest(request, response, contentType, Observable.error(throwable));
   }
 
   private Set<String> getSupportedContentTypes(Route<ByteBuf, ByteBuf> route) {
@@ -203,56 +205,55 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
   }
 
 
-  private String acceptNegotiation(HttpServerRequest<ByteBuf> request,
+  private Optional<String> acceptNegotiation(String accept,
                                    Set<String> supportedContentTypes) {
-
-    String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
 
     if (StringUtils.isBlank(accept)) {
       if (supportedContentTypes.contains(this.serializerManager.getDefaultContentType())) {
-        return this.serializerManager.getDefaultContentType();
+        return Optional.of(serializerManager.getDefaultContentType());
       }
 
-      switch (supportedContentTypes.size()) {
-        case 0:
-          throw new CannotSerializeException("Cannot determine the content-type to serialize");
-
-        case 1:
-          return supportedContentTypes.stream().findFirst().get();
-
-        default:
-          throw new CannotSerializeException("Cannot determine the content-type to serialize between: " + supportedContentTypes);
+      // If only one is supported we will use this
+      if (supportedContentTypes.size() == 1) {
+        return supportedContentTypes.stream().findFirst();
+      } else {
+        // Otherwise we cannot choose objectively which
+        return Optional.empty();
       }
+
     } else {
       return getSerializerContentType(accept, supportedContentTypes);
     }
 
   }
 
-  private String getSerializerContentType(String acceptHeader, Set<String> supportedContentTypes) {
-    validateAcceptValue(acceptHeader);
-
-
+  private Optional<String> getSerializerContentType(String acceptHeader, Set<String> supportedContentTypes) {
+    if(supportedContentTypes.isEmpty()) {
+      return Optional.empty();
+    }
+    
     String serializeContentType = MIMEParse.bestMatch(supportedContentTypes, acceptHeader);
     if (StringUtils.isBlank(serializeContentType)) {
-      throw new CannotSerializeException("Cannot serialize with the given content type: " + acceptHeader);
+      return Optional.empty();
     }
 
-    return serializeContentType;
+    return Optional.of(serializeContentType);
   }
 
-  private void validateAcceptValue(String acceptHeaderValue) {
-    String[] mediaTypesStr = acceptHeaderValue.split(",");
+  private void validateAcceptHeader(String acceptHeaderValue) throws InvalidAcceptHeaderException {
+    if(acceptHeaderValue != null) {
+      String[] mediaTypesStr = acceptHeaderValue.split(",");
 
-    try {
-      Stream.of(mediaTypesStr)
-          .map(String::trim)
-          .map(MediaType::parse)
-          .collect(Collectors.toList());
+      try {
+        Stream.of(mediaTypesStr)
+            .map(String::trim)
+            .map(MediaType::parse)
+            .collect(Collectors.toList());
 
 
-    } catch (IllegalArgumentException e) {
-      throw new InvalidAcceptHeaderException(e);
+      } catch (IllegalArgumentException e) {
+        throw new InvalidAcceptHeaderException(e);
+      }
     }
   }
 }

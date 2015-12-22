@@ -71,7 +71,8 @@ public class SerializeManager {
    * if the content Type is not supported
    */
   public Optional<Serializer> getSerializer(String contentType) {
-    return Optional.ofNullable(serializers.get(contentType));
+    return Optional.ofNullable(contentType)
+        .map(serializers::get);
   }
 
   public boolean hasSerializers() {
