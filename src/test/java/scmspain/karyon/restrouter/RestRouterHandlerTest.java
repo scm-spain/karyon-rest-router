@@ -34,8 +34,10 @@ import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
@@ -634,6 +636,32 @@ public class RestRouterHandlerTest {
     // Then
     verify(serializerManager).getSerializer("application/json");
     verify(serializer).serialize(any(RestRouterErrorDTO.class), any());
+  }
+
+  @Test
+  public void givenARouteCustomInAHandlerWithSerializersWhenAnCustomExceptionIsThrownItShouldBeSerialized() {
+    // Given
+    setAccept("text/*, application/json");
+    setCustomRoute(true);
+    setSupportedContents("text/plain", "application/xml", "application/json");
+
+    given(routeHandler.process(request, response))
+        .willReturn(Observable.error(new MyException()));
+
+    // When
+    RestRouterHandler restRouterHandler = new RestRouterHandler(restUriRouter, serializerManager, errorHandler);
+    Observable<Void> responseBody = restRouterHandler.handle(request, response);
+
+    responseBody.subscribe(subscriber);
+
+    // Then
+    verify(errorHandler).handleError(any(), argThat(instanceOf(MyException.class)), any());
+    verify(serializerManager).getSerializer("application/json");
+    verify(serializer).serialize(any(RestRouterErrorDTO.class), any());
+  }
+
+  class MyException extends Exception {
+
   }
 
 }
