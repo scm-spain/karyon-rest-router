@@ -156,52 +156,42 @@ public class RestRouterHandler implements RequestHandler<ByteBuf, ByteBuf> {
 
   private Observable<Void> handleResolvedRequest(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response, String contentType, Observable<Object> resultObs) {
 
-    resultObs = resultObs.onErrorResumeNext(throwable -> {
-          if (errorHandler != null) {
-            return errorHandler.handleError(request, throwable, response::setStatus);
-
-          } else {
-            return Observable.error(throwable);
-          }
-        }
-    );
+    if(errorHandler != null) {
+      resultObs = resultObs.onErrorResumeNext(throwable ->
+          errorHandler.handleError(request, throwable, response::setStatus)
+      );
+    }
 
     // If RouteNotFound is not handle it will be handled here
     resultObs = resultObs.onErrorResumeNext(throwable -> {
       return karyonRestRouterErrorHandler.handleError(request, throwable, response::setStatus);
     });
 
-    Serializer serializer = serializerManager.getSerializer(contentType).get();
+    Serializer serializer = serializerManager.getSerializer(contentType)
+        .orElseGet(RestRouterErrorDTOFallbackSerializer::getInstance);
 
     SerializeWriter writer = new SerializeWriter(response, contentType);
 
     return resultObs.flatMap(result -> writer.write(result, serializer));
   }
 
-
   private Observable<Void> handleCustomSerialization(Route<ByteBuf, ByteBuf> route,
                                                     HttpServerRequest<ByteBuf> request,
                                                     HttpServerResponse<ByteBuf> response) {
 
-    Observable<Object> resultObs = route.getHandler()
-        .process(request, response);
+    Observable<Void> resultObs = route.getHandler()
+        .process(request, response)
+        .cast(Void.class);
 
-    resultObs = resultObs.onErrorResumeNext(throwable -> handleCustomSerializationError(throwable, request, response));
-
-    return resultObs.cast(Void.class);
+    return resultObs.onErrorResumeNext(throwable -> handleCustomSerializationError(throwable, request, response));
   }
 
-  private Observable<?> handleCustomSerializationError(Throwable throwable, HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
+  private Observable<Void> handleCustomSerializationError(Throwable throwable, HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
       String accept = request.getHeaders().get(HttpHeaders.ACCEPT);
       String contentType = acceptNegotiation(accept, serializerManager.getSupportedMediaTypes())
           .orElseGet(serializerManager::getDefaultContentType);
-      SerializeWriter serializeWriter = new SerializeWriter(response, contentType);
 
-      return karyonRestRouterErrorHandler.handleError(request, throwable, response::setStatus)
-          .flatMap(errorDTO ->
-              serializeWriter.write(errorDTO, serializerManager.getSerializer(contentType)
-                  .orElseGet(RestRouterErrorDTOFallbackSerializer::getInstance))
-          );
+      return handleResolvedRequest(request, response, contentType, Observable.error(throwable));
   }
 
   private Set<String> getSupportedContentTypes(Route<ByteBuf, ByteBuf> route) {

@@ -105,6 +105,9 @@ public class RestRouterHandlerTest {
     given(response.writeStringAndFlush(any()))
         .willReturn(Observable.empty());
 
+    given(serializerManager.getSerializer(any()))
+        .willReturn(Optional.empty());
+
     ArgumentCaptor<Throwable> throwableArgumentCaptor = ArgumentCaptor.forClass(Throwable.class);
     given(errorHandler.handleError(eq(request), throwableArgumentCaptor.capture(), any()))
         .willAnswer(invocation -> Observable.error(throwableArgumentCaptor.getValue()));
@@ -399,7 +402,7 @@ public class RestRouterHandlerTest {
   }
 
   @Test
-  public void testWhenThereIsNotErrorHandlerAndUsesCustomSerializationThenItCallsDefaultErrorHandler() {
+  public void testWhenUsesCustomSerializationAndExceptionOccursThenItCallsErrorHandler() {
     // Given
     setAccept("application/json");
     setSupportedContents("application/json");
@@ -416,7 +419,7 @@ public class RestRouterHandlerTest {
     responseBody.subscribe(subscriber);
 
     // Then
-    verify(errorHandler, never()).handleError(eq(request), any(), any());
+    verify(errorHandler).handleError(eq(request), any(), any());
     //verify(response.getHeaders()).setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
     verify(response).setStatus(HttpResponseStatus.BAD_REQUEST);
 
@@ -639,7 +642,7 @@ public class RestRouterHandlerTest {
   }
 
   @Test
-  public void givenARouteCustomInAHandlerWithSerializersWhenAnCustomExceptionIsThrownItShouldBeSerialized() {
+  public void givenARouteCustomWithSerializersWhenAnCustomExceptionIsThrownItShouldBeSerialized() {
     // Given
     setAccept("text/*, application/json");
     setCustomRoute(true);
@@ -656,8 +659,6 @@ public class RestRouterHandlerTest {
 
     // Then
     verify(errorHandler).handleError(any(), argThat(instanceOf(MyException.class)), any());
-    verify(serializerManager).getSerializer("application/json");
-    verify(serializer).serialize(any(RestRouterErrorDTO.class), any());
   }
 
   class MyException extends Exception {
